@@ -2,22 +2,46 @@
 icon: "house"
 title: "NekoDroid"
 sidebarTitle: "Overview"
-mode: "custom"
+mode: "wide"
 description: "Run ARM programs and small Android APKs in your browser. Written in Rust, compiled to WebAssembly."
 ---
 
 <div className="nd-hub">
-  <div className="nd-hub-hero">
-    <p className="nd-kicker">Docs</p>
-    <h1 className="nd-hub-title">NekoDroid</h1>
+  <div className="nd-hub-top">
+    <div className="nd-hub-hero">
+      <p className="nd-kicker">Docs</p>
+      <h1 className="nd-hub-title">NekoDroid</h1>
 
-    <p className="nd-hub-lede">
-      Run ARM programs and small Android APKs in your browser. Rust to WebAssembly, local execution, no cloud runtime.
-    </p>
+      <p className="nd-hub-lede">
+        Run ARM programs and small Android APKs in your browser. Rust to WebAssembly, local execution, no cloud runtime.
+      </p>
 
-    <div className="nd-hub-actions">
-      <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
-      <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-ghost">GitHub</a>
+      <div className="nd-hub-actions">
+        <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
+        <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-ghost">GitHub</a>
+      </div>
+    </div>
+
+    <div className="nd-hub-aside">
+      <a className="nd-aside-link" href="/quickstart">
+        <span className="nd-aside-label">Start</span>
+        <span className="nd-aside-text">Quickstart</span>
+      </a>
+
+      <a className="nd-aside-link" href="/how-it-works">
+        <span className="nd-aside-label">Architecture</span>
+        <span className="nd-aside-text">How it works</span>
+      </a>
+
+      <a className="nd-aside-link" href="/reference/wasm-api">
+        <span className="nd-aside-label">API</span>
+        <span className="nd-aside-text">Wasm bindings</span>
+      </a>
+
+      <a className="nd-aside-link" href="/android/supported-apks">
+        <span className="nd-aside-label">Limits</span>
+        <span className="nd-aside-text">Supported APKs</span>
+      </a>
     </div>
   </div>
 
