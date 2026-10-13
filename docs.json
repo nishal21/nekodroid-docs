@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "maple",
+  "theme": "willow",
   "name": "NekoDroid",
   "colors": {
-    "primary": "#0f0f10",
-    "light": "#fafafa",
-    "dark": "#0f0f10"
+    "primary": "#E8EAED",
+    "light": "#E8EAED",
+    "dark": "#111113"
   },
   "favicon": "/logo/favicon.svg",
   "navigation": {
@@ -111,7 +111,10 @@
   "contextual": {
     "options": [
       "copy",
-      "view"
+      "view",
+      "chatgpt",
+      "claude",
+      "cursor"
     ]
   },
   "footer": {
@@ -119,32 +122,34 @@
       "github": "https://github.com/nishal21/NekoDroid"
     }
   },
-  "description": "Documentation for NekoDroid, a Rust and WebAssembly ARM emulator with a separate, constrained Dalvik HLE runtime for small APK fixtures.",
+  "description": "Run ARM programs and small Android APKs in the browser. Rust to WebAssembly, local execution, no cloud runtime.",
   "background": {
     "color": {
-      "light": "#ffffff",
-      "dark": "#0c0c0d"
-    }
+      "light": "#FAFAFA",
+      "dark": "#09090B"
+    },
+    "decoration": "grid"
   },
   "seo": {
     "metatags": {
       "og:site_name": "NekoDroid",
       "og:locale": "en_US",
       "author": "nishal21",
-      "theme-color": "#0c0c0d"
+      "theme-color": "#09090B",
+      "keywords": "NekoDroid, ARM emulator, Rust, WebAssembly, Dalvik HLE"
     },
     "indexing": "navigable"
   },
   "styling": {
     "eyebrows": "breadcrumbs",
-    "codeblocks": "system"
+    "codeblocks": "dark"
   },
   "fonts": {
     "body": {
-      "family": "Inter"
+      "family": "IBM Plex Sans"
     },
     "heading": {
-      "family": "Inter",
+      "family": "Space Grotesk",
       "weight": 600
     }
   },
