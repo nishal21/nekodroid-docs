@@ -1,0 +1,110 @@
+---
+title: "NekoDroid Development: Build, Test, and PR Checks"
+description: "Set up the NekoDroid development environment. Run required checks before a pull request: Rust unit tests, Wasm build, and production bundle."
+sidebarTitle: "Development"
+---
+
+This page describes how to set up the NekoDroid development environment and run the checks required before a pull request.
+
+## Prerequisites
+
+- Rust stable with the `wasm32-unknown-unknown` target
+- `wasm-pack`
+- Node.js
+
+## Clone and install
+
+```bash
+git clone https://github.com/nishal21/NekoDroid.git
+cd NekoDroid
+npm install
+```
+
+## Build commands
+
+The `package.json` scripts are the source of truth for builds:
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts the Vite dev server on `http://localhost:5173` |
+| `npm run build:wasm` | Runs `wasm-pack build --target web` |
+| `npm run build` | Builds Wasm, compiles TypeScript, and runs Vite production bundling |
+| `npm test` | Alias for `cargo test --lib` |
+
+Example dev session:
+
+```bash
+npm run build:wasm
+npm run dev
+```
+
+Open `http://localhost:5173` in your browser.
+
+## Checks before a PR
+
+Run these three commands. All must pass.
+
+### 1. Rust unit tests
+
+```bash
+cargo test --lib
+```
+
+This runs tests for memory read/write, UART MMIO, CPU fetch-decode-execute, ALU operations, branch logic, barrel shifter, load/store, block transfer, SWI exceptions, Thumb instructions, and HLE Dalvik stubs.
+
+### 2. Wasm build
+
+```bash
+npm run build:wasm
+```
+
+This runs `wasm-pack build --target web` and must complete without errors.
+
+### 3. Full production build
+
+```bash
+npm run build
+```
+
+This builds Wasm, compiles TypeScript, and runs Vite production bundling. It must complete cleanly.
+
+## Safe staging
+
+Stage only the files you changed. Do not use `git add .` or `git add -A`.
+
+After staging, run `git status` and confirm that `browser-droid/`, `pkg/`, journals, and demo binaries are not listed.
+
+## Repo layout
+
+| Directory | Contents |
+| --- | --- |
+| `src/` | Rust emulator core, Android HLE, and TypeScript UI |
+| `src/android/` | Dalvik interpreter, DEX parser, APK loader, HLE stubs |
+| `src/cpu/` | ARM/Thumb CPU core with fetch-decode-execute |
+| `src/memory/` | MMU, memory map, and VRAM framebuffer |
+| `public/` | Static assets and host headers |
+| `testdata/` | `hello.apk` and related fixtures |
+| `docs/` | `SUPPORTED_APKS.md`, `OPCODE_MVP.md`, `REFERENCES.md` |
+| `examples/hello-apk/` | Notes for rebuilding fixtures |
+
+## DEVLOG conventions
+
+Track significant work sessions in `DEVLOG.md` at the repo root. Update `DEVLOG.md` when you finish a real session of work, not after every small change.
+
+## Key external references
+
+When working on the HLE path, consult these authoritative documents:
+
+- [DEX file format](https://source.android.com/docs/core/runtime/dex-format)
+- [Dalvik bytecode](https://source.android.com/docs/core/runtime/dalvik-bytecode)
+- [Instruction formats](https://source.android.com/docs/core/runtime/instruction-formats)
+- [Opcodes](https://developer.android.com/reference/dalvik/bytecode/Opcodes)
+- [smali / baksmali](https://github.com/JesusFreke/smali)
+
+## Commit hygiene
+
+- Keep commits logical and well-described
+- If you add a new opcode, update `docs/OPCODE_MVP.md` in the same commit
+- Do not commit from an automated agent
+
+For licensing and issue reporting guidelines, see [Contributing](/contributing).

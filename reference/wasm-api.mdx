@@ -1,97 +1,85 @@
 ---
-title: "NekoDroid JavaScript API: Every wasm-bindgen Export"
-sidebarTitle: "JavaScript API"
-description: "Reference for all 29 NekoDroid wasm-bindgen functions plus VirtualCPU: signatures, return values, and errors for the ARM CPU, VRAM, input, audio, boot, and APK HLE."
-keywords:
-  - "NekoDroid"
-  - "WebAssembly"
-  - "wasm-bindgen"
-  - "JavaScript API"
-  - "ARM emulator"
-  - "Dalvik HLE"
-  - "API reference"
+title: "NekoDroid Wasm API: 29 Functions and VirtualCPU"
+sidebarTitle: "Wasm API"
+description: "Complete reference for NekoDroid's wasm-bindgen exports: 29 free functions for ARM CPU, VRAM, input, audio, Linux boot, and APK HLE plus the VirtualCPU renderer class."
 ---
 
-NekoDroid exposes its Rust core to JavaScript through `wasm-bindgen`. Everything on this page is taken from `src/lib.rs` and matches how `src/main.ts` calls it, so you can build your own UI or automation on top of the same functions the official web interface uses.
-
-<Info>
-  Build the module with `wasm-pack build --target web`, then import from the generated package. The web UI imports from `'../pkg/nekodroid.js'`. Call the default export `init()` once before anything else.
-</Info>
+NekoDroid exposes its Rust core to JavaScript through `wasm-bindgen`. Build the module with `wasm-pack build --target web` and import from the generated package. Call `init()` once before any other function.
 
 ```typescript
-import init, { init_emulator, load_demo_program, step_cpu, get_cpu_state } from '../pkg/nekodroid.js';
-
-await init();          // fetch and instantiate nekodroid_bg.wasm
-init_emulator(0);      // 512 MB RAM, PC = 0x8000
-load_demo_program();
-step_cpu();
-console.log(JSON.parse(get_cpu_state()).regs[0]); // 5
+import init, { init_emulator, step_cpu, get_cpu_state } from '../pkg/nekodroid.js';
+await init();
+init_emulator(0);
 ```
 
 ## State model
 
-NekoDroid keeps two independent pieces of global state inside the Wasm module (thread-local `RefCell`s, safe because Wasm is single-threaded):
+The Wasm module keeps two independent pieces of global state:
 
 | State | Created by | Used by |
 | --- | --- | --- |
-| ARM CPU + MMU + RAM | `init_emulator()` | CPU control, program loading, VRAM, input, audio, Linux/Android boot, Android logger |
-| APK HLE session | `load_apk()` | `launch_apk`, Dalvik stepping, Dalvik logs, `dalvik_touch` |
+| ARM CPU + MMU + RAM | `init_emulator()` | CPU control, program loading, VRAM, input, audio, Linux boot, Android logger |
+| APK HLE session | `load_apk()` | `launch_apk`, Dalvik stepping, `get_dalvik_logs`, `dalvik_touch` |
 
-<Note>
-  Functions that need the ARM CPU return `false`, `0`, or an empty value when `init_emulator()` has not been called. They never throw for that case. APK functions work without the ARM CPU, except `blit_dalvik_text_to_vram()`, which needs both.
-</Note>
+Functions that need the ARM CPU return `false`, `0`, or empty values when it is not initialized. APK functions work without the ARM CPU, except `blit_dalvik_text_to_vram()` which needs both.
 
-## Quick reference
+## Quick reference: free functions
 
-| Function | Returns | Summary |
+| Function | Returns | Behavior when uninitialized |
 | --- | --- | --- |
-| `init_emulator(ram_mb)` | `void` | Create the ARM CPU with `ram_mb` MB of RAM |
-| `get_cpu_state()` | `string` (JSON) | Registers, flags, cycles, next 5 disassembled instructions |
-| `step_cpu()` | `boolean` | Execute one instruction |
-| `run_batch(count, timer_interval)` | `number` | Execute up to `count` instructions |
-| `get_cycle_count()` | `number` | Global instruction counter |
-| `get_cp15_midr()` | `number` | CP15 Main ID Register |
-| `load_demo_program()` | `void` | Load the 10-instruction demo at `0x8000` |
-| `load_custom_hex(hex)` | `boolean` | Load hex words at `0x8000` |
-| `load_rom(bytes)` | `boolean` | Reset CPU and load a raw `.bin` at `0x8000` |
-| `boot_linux_kernel(kernel, initrd)` | `boolean` | Set up an ATAG Linux boot |
-| `boot_android(kernel, system, ramdisk, apk)` | `boolean` | Experimental kernel boot with an MMC system image |
-| `mount_system_image(bytes)` | `boolean` | Attach an image as the MMC card |
-| `wasm_memory()` | `WebAssembly.Memory` | The module's linear memory |
-| `get_vram_ptr()` / `get_vram_len()` | `number` | Location and size of the 800x600 RGBA VRAM |
-| `send_touch_event(x, y, is_down)` | `void` | Write touch MMIO registers |
-| `send_key_event(keycode, is_down)` | `void` | Write the key MMIO register |
-| `get_audio_ctrl()` / `get_audio_freq()` | `number` | Read audio MMIO registers |
-| `load_apk(bytes)` | `boolean` | Parse an APK into an HLE session |
-| `get_apk_info()` | `string` (JSON) | Package, activity, size, classes, VM status |
-| `launch_apk()` | `boolean` | Push the entry method onto the Dalvik VM |
-| `step_dalvik()` / `run_dalvik_batch(count)` | `boolean` / `number` | Execute Dalvik bytecode |
-| `get_dalvik_logs()` | `string` | HLE log lines |
-| `blit_dalvik_text_to_vram()` | `boolean` | Draw HLE canvas text into VRAM |
-| `dalvik_touch(x, y, is_down)` | `void` | Pass touch state to the HLE host |
-| `get_android_logs()` / `clear_android_logs()` | `string` / `void` | Read or clear the emulated logger device |
-| `VirtualCPU` | class | Standalone noise, gradient, and plasma renderer |
+| `init_emulator(ram_mb)` | `void` | Creates fresh CPU, replaces existing |
+| `get_cpu_state()` | `string` (JSON) | `{"error":"CPU not initialized"}` |
+| `step_cpu()` | `boolean` | `false` |
+| `run_batch(count, timer_interval)` | `number` | `0` |
+| `get_cycle_count()` | `number` | `0` |
+| `get_cp15_midr()` | `number` | `0` |
+| `load_demo_program()` | `void` | No-op |
+| `load_custom_hex(hex)` | `boolean` | `false` |
+| `load_rom(bytes)` | `boolean` | `false` |
+| `boot_linux_kernel(kernel, initrd)` | `boolean` | `false` |
+| `boot_android(kernel, system, ramdisk, apk)` | `boolean` | `false` |
+| `mount_system_image(bytes)` | `boolean` | `false` |
+| `wasm_memory()` | `WebAssembly.Memory` | Always works |
+| `get_vram_ptr()` | `number` | `0` |
+| `get_vram_len()` | `number` | `0` |
+| `send_touch_event(x, y, is_down)` | `void` | No-op |
+| `send_key_event(keycode, is_down)` | `void` | No-op |
+| `get_audio_ctrl()` | `number` | `0` |
+| `get_audio_freq()` | `number` | `0` |
+| `load_apk(bytes)` | `boolean` | Rejects files over 32 MiB |
+| `get_apk_info()` | `string` (JSON) | `{"error":"no apk loaded"}` |
+| `launch_apk()` | `boolean` | `false` |
+| `step_dalvik()` | `boolean` | `false` |
+| `run_dalvik_batch(count)` | `number` | `0` |
+| `get_dalvik_logs()` | `string` | `""` |
+| `blit_dalvik_text_to_vram()` | `boolean` | `false` if no text or no CPU |
+| `dalvik_touch(x, y, is_down)` | `void` | No-op |
+| `get_android_logs()` | `string` | `"Android logger not available (CPU not initialized)"` |
+| `clear_android_logs()` | `void` | No-op |
 
 ## Emulator lifecycle
 
 ### `init_emulator(ram_mb: number): void`
 
-Creates a fresh ARM CPU, replacing any existing one. PC is set to `0x8000` and SP to `ram_bytes - 0x10000`.
+Creates a fresh ARM CPU. PC is set to `0x8000` and SP to `ram_bytes - 0x10000`.
 
-<ParamField path="ram_mb" type="number (u32)" required>
-  RAM in megabytes. `0` selects the default of 512. Values are capped at 4096. Above 1024, a warning is logged because large allocations can run out of memory in some browsers.
-</ParamField>
+| `ram_mb` | Result |
+| --- | --- |
+| `0` | 512 MiB |
+| `1` to `4096` | Requested size |
+| `> 4096` | Capped to 4096 MiB |
+| `> 1024` | Browser OOM warning logged |
 
 ```typescript
 init_emulator(0);    // 512 MB, SP = 0x1FFF0000
-init_emulator(128);  // smaller, faster to allocate
+init_emulator(128);  // smaller allocation
 ```
 
 ### `get_cpu_state(): string`
 
-Returns a JSON string. If the CPU is not initialized, it returns `{"error":"CPU not initialized"}`.
+Returns JSON with registers, flags, cycles, and disassembly. Example after `load_demo_program()`:
 
-```json Fresh 512 MB emulator after load_demo_program()
+```json
 {
   "regs": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 536805376, 0, 32768],
   "cpsr": 16,
@@ -112,139 +100,99 @@ Returns a JSON string. If the CPU is not initialized, it returns `{"error":"CPU 
 }
 ```
 
-<ResponseField name="regs" type="number[16]">
-  `R0` to `R15`. `R13` is SP, `R15` is the address of the next instruction.
-</ResponseField>
-
-<ResponseField name="cpsr" type="number">
-  Raw CPSR. The CPU starts in User mode (`0x10`).
-</ResponseField>
-
-<ResponseField name="n / z / c / v" type="boolean">
-  Negative, Zero, Carry, and Overflow flags.
-</ResponseField>
-
-<ResponseField name="t" type="boolean">
-  `true` when executing Thumb code.
-</ResponseField>
-
-<ResponseField name="cycles" type="number">
-  Same value as `get_cycle_count()`.
-</ResponseField>
-
-<ResponseField name="halted" type="boolean">
-  `true` once the CPU has stopped.
-</ResponseField>
-
-<ResponseField name="disasm" type="string[5]">
-  The next five 32-bit words from PC, disassembled as `"0xADDRESS: TEXT"`.
-</ResponseField>
+| Field | Meaning |
+| --- | --- |
+| `regs[0..15]` | R0 to R15. R13 is SP, R15 is PC |
+| `cpsr` | Raw CPSR. Starts in User mode (`0x10`) |
+| `n / z / c / v` | Negative, Zero, Carry, Overflow flags |
+| `t` | `true` when in Thumb state |
+| `cycles` | Same as `get_cycle_count()` |
+| `halted` | `true` once the CPU has stopped |
+| `disasm` | Next 5 instructions from PC |
 
 ### `get_cycle_count(): number`
 
-Returns the global instruction counter (`u32`). It increases with every executed instruction from `step_cpu` and `run_batch`, and resets to `0` on `load_custom_hex`, `load_rom`, `boot_linux_kernel`, and `boot_android`.
+Global instruction counter (`u32`). Increments with every executed instruction. Resets to `0` on `load_custom_hex`, `load_rom`, `boot_linux_kernel`, and `boot_android`.
 
 ### `get_cp15_midr(): number`
 
-Returns the emulated CP15 MIDR value, or `0` if the CPU is not initialized.
-
-```typescript
-console.log(`MIDR = 0x${get_cp15_midr().toString(16).padStart(8, '0')}`);
-```
+Returns `0x410FC090` (Cortex-A9) when initialized, else `0`.
 
 ## CPU control
 
 ### `step_cpu(): boolean`
 
-Executes one ARM or Thumb instruction. Returns `true` if it executed, `false` if the CPU is halted or not initialized.
+Executes one ARM or Thumb instruction. Returns `true` if executed, `false` if halted or uninitialized.
 
 ### `run_batch(count: number, timer_interval: number): number`
 
-Runs up to `count` instructions inside Wasm, which avoids per-instruction JavaScript boundary overhead. Returns the number actually executed: fewer than `count` if the CPU halts, `0` if it is not initialized.
-
-<ParamField path="count" type="number (u32)" required>
-  Maximum instructions to execute.
-</ParamField>
-
-<ParamField path="timer_interval" type="number (u32)" required>
-  `SYS_TIMER` (`0x10000014`) increments by 1 every `timer_interval` executed instructions. `0` is treated as `200_000`.
-</ParamField>
+Runs up to `count` instructions in Wasm to avoid JS boundary overhead. Returns actual count executed. `timer_interval` of `0` is treated as `200000`.
 
 ```typescript
 const executed = run_batch(1_000_000, 200_000);
 ```
 
-<Tip>
-  Use `run_batch` for anything long-running, such as Linux boot or demo ROMs. Call it once per `requestAnimationFrame` tick.
-</Tip>
+The `SYS_TIMER` register (`0x10000014`) increments by 1 every `timer_interval` instructions.
 
 ## Program loading
 
-All three loaders write to `0x8000` and set PC to `0x8000`.
+All loaders write to `0x8000` and set PC to `0x8000`.
 
 ### `load_demo_program(): void`
 
 Loads 10 ARM instructions:
 
-```armasm
+```text
 0x8000  MOV R0, #5
 0x8004  MOV R1, #10
-0x8008  ADD R2, R0, R1     ; R2 = 15
-0x800C  SUB R3, R2, #1     ; R3 = 14
+0x8008  ADD R2, R0, R1
+0x800C  SUB R3, R2, #1
 0x8010  CMP R3, #14
-0x8014  BEQ 0x8020
-0x8018  MOV R4, #1         ; not-equal path
-0x801C  B   0x8024
-0x8020  MOV R4, #0         ; equal path (taken)
+0x8014  BEQ +2
+0x8018  MOV R4, #1
+0x801C  B +1
+0x8020  MOV R4, #0
 0x8024  NOP
 ```
 
-It does not reset the cycle counter or other registers.
+Does not reset the cycle counter.
 
 ### `load_custom_hex(hex_string: string): boolean`
 
-Loads ARM machine code from hex text. Every non-hex character (spaces, newlines, commas) is stripped first. The remaining digits must be a multiple of 8, and each 8-digit group is one 32-bit instruction stored little-endian. Resets the cycle counter. Returns `false` if the length is wrong, a word fails to parse, or the CPU is not initialized; the reason is logged to the console.
+Strips non-hex characters, parses 8-digit groups as little-endian 32-bit words, and loads at `0x8000`. Resets cycle counter. Returns `false` if length is not a multiple of 8, a word fails parsing, or CPU is uninitialized.
 
 ```typescript
-load_custom_hex('e3a00005 e3a0100a e0802001'); // MOV R0,#5; MOV R1,#10; ADD R2,R0,R1
+load_custom_hex('e3a00005 e3a0100a e0802001');
 ```
 
 ### `load_rom(bytes: Uint8Array): boolean`
 
-Fully resets the CPU, copies the bytes to `0x8000`, and resets the cycle counter. Use it for flat binaries from `arm-none-eabi-objcopy -O binary`. Returns `false` only if the CPU is not initialized.
+Resets CPU, copies bytes to `0x8000`, resets cycle counter. For flat binaries from `arm-none-eabi-objcopy -O binary`. Returns `false` if CPU is uninitialized. There is no size cap for `load_rom`; the 32 MiB limit applies only to APK uploads through `load_apk`.
 
 ```typescript
-const bytes = new Uint8Array(await (await fetch('/snake.bin')).arrayBuffer());
+const bytes = new Uint8Array(await (await fetch('/demo.bin')).arrayBuffer());
 load_rom(bytes);
 ```
-
-<Note>
-  The 32 MiB upload limit applies to APKs only. `load_rom` does not enforce a size cap.
-</Note>
 
 ## Linux and Android boot
 
 ### `boot_linux_kernel(kernel_bytes: Uint8Array, initrd_bytes: Uint8Array): boolean`
 
-Prepares an ATAG-based Linux boot with machine type `0x046F` (Goldfish) and resets the cycle counter. Pass an empty `Uint8Array` to skip the initramfs. Returns `false` if the CPU is not initialized.
+Prepares ATAG-based Linux boot with machine type `0x046F` (Goldfish). Pass empty `Uint8Array` to skip initramfs. Resets cycle counter. Returns `false` if CPU is uninitialized.
 
 ```typescript
-boot_linux_kernel(kernel, new Uint8Array()); // no initrd
+boot_linux_kernel(kernel, new Uint8Array());
 ```
 
-This only sets up memory and registers. Keep calling `run_batch()` to execute the kernel.
+After calling this, keep running `run_batch()` to execute the kernel. Linux boot is experimental.
 
 ### `boot_android(kernel_bytes, system_img, ramdisk_img, apk_bytes): boolean`
 
-<Warning>
-  Experimental and separate from the APK HLE runner. A full Android boot is not guaranteed.
-</Warning>
-
-If `system_img` is non-empty, it is attached as the MMC card. The kernel is then booted the same way as `boot_linux_kernel` (machine type `0x046F`), with `ramdisk_img` as the optional initrd. If `apk_bytes` is non-empty, only its size is logged: auto-launch after boot is not implemented yet. Returns `false` if the CPU is not initialized.
+Also experimental and separate from the APK HLE runner. If `system_img` is non-empty, it is attached as the MMC card. Boots with machine type `0x046F` and `ramdisk_img` as optional initrd. If `apk_bytes` is non-empty, only its size is logged; auto-launch is not implemented. Returns `false` if CPU is uninitialized.
 
 ### `mount_system_image(image_bytes: Uint8Array): boolean`
 
-Copies the bytes into the emulated MMC card at `0x1C000000` so a booting kernel can read them. The APK HLE runner does not use this image. Returns `false` if the CPU is not initialized.
+Copies bytes into emulated MMC card. The APK HLE runner does not use this image. Returns `false` if CPU is uninitialized.
 
 ## VRAM and memory
 
@@ -254,65 +202,66 @@ Returns the module's linear memory.
 
 ### `get_vram_ptr(): number` and `get_vram_len(): number`
 
-Offset and length of the CPU's VRAM inside `wasm_memory().buffer`. VRAM is 800x600 RGBA, so the length is `1_920_000`. Both return `0` if the CPU is not initialized. Guest code writes pixels at `0x04000000`.
+Offset and length of CPU VRAM inside `wasm_memory().buffer`. Length is `1920000` (800x600x4). Both return `0` if uninitialized. Guest code writes pixels at `0x04000000`.
 
 ```typescript
-const pixels = new Uint8ClampedArray(wasm_memory().buffer, get_vram_ptr(), get_vram_len());
+const pixels = new Uint8ClampedArray(
+  wasm_memory().buffer, get_vram_ptr(), get_vram_len()
+);
 ctx.putImageData(new ImageData(pixels, 800, 600), 0, 0);
 ```
 
-<Tip>
-  Create the view each frame. If Wasm memory grows, older `ArrayBuffer` views become detached.
-</Tip>
+Create the view each frame. If Wasm memory grows, older ArrayBuffer views become detached.
 
 ## Input
 
 ### `send_touch_event(x: number, y: number, is_down: boolean): void`
 
-Writes the touch state read by guest code at `INPUT_TOUCH` (`0x1000000C`, `1` or `0`) and `INPUT_COORD` (`0x10000010`, `(y << 16) | x`). Use canvas pixel coordinates (0 to 799, 0 to 599). If `x` or `y` is negative, only the pressed state changes and the last coordinates are kept.
+Writes `INPUT_TOUCH` (`0x1000000C`) and `INPUT_COORD` (`0x10000010`, packed `(y << 16) | x`). Negative coordinates preserve the last position and only update pressed state.
 
 ### `send_key_event(keycode: number, is_down: boolean): void`
 
-Writes `INPUT_KEY` (`0x10000008`). Key-down stores the DOM `KeyboardEvent.keyCode`; key-up stores `0`. Only one key is tracked at a time.
+Writes `INPUT_KEY` (`0x10000008`). Key-down stores the DOM keyCode; key-up stores `0`. Only one key is tracked at a time.
 
 ```typescript
 document.addEventListener('keydown', (e) => send_key_event(e.keyCode, true));
-document.addEventListener('keyup',   (e) => send_key_event(e.keyCode, false));
+document.addEventListener('keyup', (e) => send_key_event(e.keyCode, false));
 ```
 
 ## Audio
 
 ### `get_audio_ctrl(): number`
 
-Current `AUDIO_CTRL` (`0x10000018`). Bit 0 enables sound; bits 1 and 2 select the waveform: `0` square, `1` sine, `2` sawtooth, `3` triangle.
+Bit 0 enables sound. Bits 1 and 2 select waveform: `0` square, `1` sine, `2` sawtooth, `3` triangle.
 
 ### `get_audio_freq(): number`
 
-Current `AUDIO_FREQ` (`0x1000001C`) in Hz.
+Frequency in Hz. Both return `0` when uninitialized.
 
 ```typescript
 const ctrl = get_audio_ctrl();
 if (ctrl & 1) {
-  osc.type = (['square', 'sine', 'sawtooth', 'triangle'] as const)[(ctrl >> 1) & 3];
+  const wave = ['square', 'sine', 'sawtooth', 'triangle'][(ctrl >> 1) & 3];
+  osc.type = wave;
   osc.frequency.value = get_audio_freq();
 }
 ```
 
-Both return `0` if the CPU is not initialized. They expose register values, not samples; the host drives a Web Audio oscillator.
+These expose register values, not samples. The host drives a Web Audio oscillator.
 
 ## APK HLE runtime
 
-NekoDroid's APK path parses the ZIP, reads `classes.dex`, and interprets Dalvik bytecode with stubbed framework calls. It is not ART and does not boot Android. See [Supported APKs](/android/supported-apks) for limits.
+The APK path parses the ZIP, reads `classes.dex`, and interprets Dalvik bytecode with stubbed framework calls. It is not ART and does not boot Android.
 
 ### `load_apk(apk_bytes: Uint8Array): boolean`
 
-Creates a new HLE session, replacing any previous one. Returns `false` and logs the reason if the file is larger than 32 MiB (33,554,432 bytes), lacks a `PK` ZIP header, has no `classes.dex`, or the DEX fails to parse.
+Creates a new HLE session, replacing any previous one. Rejects files over 32 MiB (33554432 bytes), files without a `PK` header, files without `classes.dex`, or unparseable DEX. Returns `false` and logs the reason.
 
 ### `get_apk_info(): string`
 
-Returns JSON describing the session, or `{"error":"no apk loaded"}`.
+Returns JSON describing the session.
 
-```json testdata/hello.apk right after load_apk()
+```json
 {
   "package": "com.nekodroid",
   "activity": "Lcom/nekodroid/Hello;",
@@ -324,29 +273,17 @@ Returns JSON describing the session, or `{"error":"no apk loaded"}`.
 }
 ```
 
-<ResponseField name="package" type="string">
-  From `AndroidManifest.xml` when it can be read, otherwise guessed from the first DEX class's package (or `"unknown"`).
-</ResponseField>
-
-<ResponseField name="activity" type="string">
-  Launcher activity descriptor, or `""` if none was found.
-</ResponseField>
-
-<ResponseField name="apk_size" type="number">
-  APK size in bytes.
-</ResponseField>
-
-<ResponseField name="classes" type="number">
-  Number of classes defined in `classes.dex`.
-</ResponseField>
-
-<ResponseField name="halted / steps / logs" type="boolean / number / number">
-  VM halt flag, total executed Dalvik instructions, and number of log lines.
-</ResponseField>
+| Field | Source |
+| --- | --- |
+| `package` | `AndroidManifest.xml` when readable, else guessed from first DEX class, else `"unknown"` |
+| `activity` | Launcher activity descriptor, or `""` |
+| `apk_size` | Size in bytes |
+| `classes` | Number of classes in `classes.dex` |
+| `halted / steps / logs` | VM halt flag, executed instructions, log line count |
 
 ### `launch_apk(): boolean`
 
-Picks the entry class (launcher activity, else the first DEX class) and pushes a call frame: `main(String[])` with a null argument if the class has it, otherwise `onCreate` on a new instance. Returns `false` if no APK is loaded or neither method exists. It does not run bytecode by itself.
+Picks the entry class (launcher activity, else first DEX class) and pushes a call frame. Prefers `main(String[])` with a null argument; falls back to `onCreate` on a new instance. Returns `false` if no APK is loaded or neither method exists. Does not run bytecode itself.
 
 ### `step_dalvik(): boolean`
 
@@ -354,34 +291,29 @@ Executes one Dalvik instruction. Returns `false` when the VM halts, no APK is lo
 
 ### `run_dalvik_batch(count: number): number`
 
-Executes up to `count` Dalvik instructions and returns how many ran before the VM halted.
-
-<Warning>
-  If the batch hits an error, such as an unimplemented opcode, the VM halts and the function returns `0` even if some instructions already ran. Use `get_apk_info()` to read the real `steps` and `halted` values.
-</Warning>
+Executes up to `count` instructions and returns how many ran. If the batch hits an error (including unimplemented opcode), the VM halts and this returns `0` even if some instructions already ran. Use `get_apk_info()` to read the real `steps` and `halted` values.
 
 ### `get_dalvik_logs(): string`
 
-HLE log lines joined with `\n`, or `""` if no APK is loaded. Formats by source:
+HLE log lines joined with `\n`. Formats:
 
-| Bytecode call | Log line |
+| Source | Format |
 | --- | --- |
 | `android.util.Log.*(tag, msg)` | `[tag] msg` |
-| `PrintStream.println(msg)` or `nekodroid.Hle.println(msg)` | `msg` |
+| `PrintStream.println(msg)` | `msg` |
+| `nekodroid.Hle.println(msg)` | `msg` |
 | `nekodroid.Hle.printInt(n)` | `n` |
 | `TextView.setText(text)` | `TextView: text` |
 
 ### `blit_dalvik_text_to_vram(): boolean`
 
-Fills VRAM with a dark background and draws the session's canvas text (every log line, or the latest `setText` value) as 8x8 placeholder glyph blocks, one per character. It is a visual indicator, not a readable font. Returns `false` if there is no text or the CPU is not initialized.
+Fills VRAM with a dark background and draws the session's canvas text as 8x8 placeholder glyph blocks, one per character. This is a visual indicator, not a readable font. Returns `false` if there is no text or the CPU is uninitialized.
 
 ### `dalvik_touch(x: number, y: number, is_down: boolean): void`
 
-Stores touch state in the HLE host. Bytecode reads it through the stubbed `getLastTouchX()`, `getLastTouchY()`, and `isTouchDown()` methods. No effect without a loaded APK.
+Stores touch state in the HLE host. Bytecode reads it through stubbed `getLastTouchX()`, `getLastTouchY()`, and `isTouchDown()`. No effect without a loaded APK.
 
-### Full APK run
-
-This is the sequence the web UI runs for **Load APK** and **Run APK (HLE)**:
+### Full APK run sequence
 
 ```typescript
 const bytes = new Uint8Array(await file.arrayBuffer());
@@ -390,7 +322,6 @@ if (load_apk(bytes)) {
   if (launch_apk()) {
     const steps = run_dalvik_batch(50_000);
     blit_dalvik_text_to_vram();
-    console.log(`HLE Dalvik ran ${steps} steps`);
     console.log(get_dalvik_logs()); // "Hello from NekoDroid" for hello.apk
   }
 }
@@ -400,54 +331,43 @@ if (load_apk(bytes)) {
 
 ### `get_android_logs(): string`
 
-Returns entries that guest code wrote to the emulated logger device (`0x1E000000`), one per line as `LEVEL [tag] message` with levels `V`, `D`, `I`, `W`, `E` (or `?`). This is not the HLE APK log. Without a CPU it returns `"Android logger not available (CPU not initialized)"`.
+Returns entries written by guest code to the emulated logger device (`0x1E000000`), one per line as `LEVEL [tag] message` with levels `V`, `D`, `I`, `W`, `E`, or `?`. This is not the HLE APK log.
 
 ### `clear_android_logs(): void`
 
-Empties that logger buffer.
+Empties the logger buffer.
 
 ## VirtualCPU renderer
 
-`VirtualCPU` is a standalone class with its own 800x600 RGBA framebuffer, used by the **Noise**, **Gradient**, and **Plasma** display modes. It is independent of the ARM CPU.
+`VirtualCPU` is a standalone class with its own 800x600 RGBA framebuffer. It is independent of the ARM CPU.
 
-| Member | Description |
-| --- | --- |
-| `new VirtualCPU()` | Allocates a framebuffer filled with opaque black |
-| `framebuffer_ptr()` | Offset of the framebuffer in Wasm memory |
-| `framebuffer_len()` | `1_920_000` |
-| `width()` / `height()` | `800` / `600` |
-| `render_noise()` | Random noise |
-| `render_gradient(frame)` | Animated gradient; pass an incrementing `u32` |
-| `render_plasma(time)` | Plasma effect; pass an increasing `f64` |
+| Member | Returns | Description |
+| --- | --- | --- |
+| `new VirtualCPU()` | `VirtualCPU` | Allocates framebuffer filled with opaque black |
+| `framebuffer_ptr()` | `number` | Offset in Wasm memory |
+| `framebuffer_len()` | `number` | `1920000` |
+| `width()` | `number` | `800` |
+| `height()` | `number` | `600` |
+| `render_noise()` | `void` | Random noise |
+| `render_gradient(frame)` | `void` | Animated gradient; pass incrementing `u32` |
+| `render_plasma(time)` | `void` | Plasma effect; pass increasing `f64` |
 
 ```typescript
 const vcpu = new VirtualCPU();
 let frame = 0;
 function loop() {
   vcpu.render_plasma(frame++ * 0.03);
-  const px = new Uint8ClampedArray(wasm_memory().buffer, vcpu.framebuffer_ptr(), vcpu.framebuffer_len());
+  const px = new Uint8ClampedArray(
+    wasm_memory().buffer, vcpu.framebuffer_ptr(), vcpu.framebuffer_len()
+  );
   ctx.putImageData(new ImageData(px, 800, 600), 0, 0);
   requestAnimationFrame(loop);
 }
 loop();
 ```
 
-## Next steps
+## Related pages
 
-<CardGroup cols={2}>
-  <Card title="Memory Map" icon="map" href="/reference/memory-map">
-    Every MMIO register and peripheral address the guest can use.
-  </Card>
-
-  <Card title="Run an APK" icon="android" href="/android/run-apk">
-    Load and run an APK through the HLE runtime in the web UI.
-  </Card>
-
-  <Card title="CPU Debugger" icon="bug" href="/guides/cpu-debugger">
-    Step through ARM code and read registers visually.
-  </Card>
-
-  <Card title="Demo Programs" icon="gamepad" href="/reference/demo-programs">
-    Snake, theremin, and other ROMs that exercise this API.
-  </Card>
-</CardGroup>
+- [Memory map](/reference/memory-map) : MMIO addresses and peripheral regions
+- [Peripherals](/reference/peripherals) : Register-level details for every device
+- [Dalvik opcodes](/reference/dalvik-opcodes) : Implemented bytecode instructions

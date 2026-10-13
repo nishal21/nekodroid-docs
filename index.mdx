@@ -1,94 +1,37 @@
 ---
-title: "NekoDroid: Explore ARM and APK Emulation in a Browser"
+title: "NekoDroid: ARM Emulation and Small APKs in a Browser"
 sidebarTitle: "Overview"
-description: "Build NekoDroid with Rust and WebAssembly, step through ARM instructions, try bare-metal demos, and run small APK fixtures with constrained Dalvik HLE."
-keywords:
-  - "NekoDroid"
-  - "browser ARM emulator"
-  - "Rust WebAssembly"
-  - "Dalvik HLE"
-  - "APK emulator"
+description: "Learn to build NekoDroid, run small APK fixtures with Dalvik HLE, debug ARM programs, and control the Rust WebAssembly module from JavaScript."
 ---
 
-NekoDroid turns your browser into an interactive emulation lab. Step through ARM and Thumb code, draw pixels through a virtual framebuffer, or run small APK fixtures in a separate Dalvik interpreter. Start with a working demo, then follow the path that matches your experiment.
+Run small Android APKs in your browser.
 
-<Frame caption="A machine inside your browser. Original NekoDroid concept illustration, not a screenshot.">
-  <img
-    src="/images/nekodroid-hero.svg"
-    alt="NekoDroid cat-shaped WebAssembly chip connected to a browser showing ARM instructions, with separate ARM CPU and APK HLE paths."
-  />
-</Frame>
+NekoDroid runs supported DEX bytecode locally with a constrained Dalvik runtime. It also emulates ARM and Thumb programs. No server executes your programs. The documented setup requires a local build; this is not a full Android environment.
 
-## Choose Your First Experiment
+## Try the Hello Fixture
+
+Build NekoDroid, select `testdata/hello.apk` with **Load APK**, then click **Run APK (HLE)**. The HLE log should contain:
+
+```text Hello fixture output
+Hello from NekoDroid
+```
 
 <CardGroup cols={2}>
-  <Card title="Get Your First Result" icon="rocket" href="/quickstart">
-    Build the emulator and verify it with three instructions or the Hello APK fixture. Start here if you're new.
+  <Card title="Get Started" icon="arrow-right" href="/quickstart">
+    Build the project and run the included demo.
   </Card>
 
-  <Card title="Watch the CPU Think" icon="microchip" href="/guides/cpu-debugger">
-    Single-step ARM code. Inspect registers, condition flags, and the next instructions as values change.
+  <Card title="How It Works" icon="diagram-project" href="/how-it-works">
+    Understand the ARM and Dalvik execution paths.
   </Card>
 
-  <Card title="Run a Small APK" icon="mobile-screen" href="/android/run-apk">
-    Load the included fixture and see Dalvik bytecode produce HLE logs, without booting Android.
+  <Card title="JavaScript API" icon="code" href="/reference/wasm-api">
+    Initialize the module and control execution.
   </Card>
 
-  <Card title="Build Your Own Interface" icon="code" href="/reference/wasm-api">
-    Use the JavaScript API to control execution, read memory, and connect your own rendering loop.
+  <Card title="Contribute" icon="code-branch" href="/contributing">
+    Report a problem or prepare a focused change.
   </Card>
 </CardGroup>
 
-## From Instructions to Pixels
-
-Your experiments can go beyond the debugger. Load a compiled `.bin`, explore framebuffer and input registers, or try the included Snake and theremin programs.
-
-<CardGroup cols={2}>
-  <Card title="Write Bare-Metal Programs" icon="terminal" href="/guides/bare-metal-programs">
-    Compile ARM code and load it at the emulator's program address, `0x8000`.
-  </Card>
-
-  <Card title="Explore the Demos" icon="gamepad" href="/reference/demo-programs">
-    Try programs that exercise graphics, keyboard input, touch, and audio.
-  </Card>
-</CardGroup>
-
-## Know Which Engine You're Using
-
-| Your input | Execution path | What to expect |
-| --- | --- | --- |
-| ARM hex or a flat `.bin` | ARM / Thumb CPU | Registers, disassembly, RAM, and memory-mapped peripherals |
-| A supported APK | Separate Dalvik HLE interpreter | Stubbed framework calls, log output, and placeholder glyphs |
-| Linux kernel and optional initramfs | ARM CPU with boot setup | Experimental kernel execution, not a guaranteed complete boot |
-
-<Note>
-  NekoDroid is not a full Android OS. Ordinary Play Store apps, multidex, JNI libraries, and Google Play Services are not supported by the APK HLE runner. Check [APK compatibility](/android/supported-apks) before trying your own file.
-</Note>
-
-## Questions Before You Start
-
-<AccordionGroup>
-  <Accordion title="Do I need Android Studio to try the Hello APK?">
-    No. The repository includes `testdata/hello.apk`. Build NekoDroid, select the file through **Load APK**, and click **Run APK (HLE)**. The expected log is `Hello from NekoDroid`.
-  </Accordion>
-
-  <Accordion title="Does APK bytecode run through the ARM CPU?">
-    No. ARM emulation and Dalvik HLE are independent execution paths in the same Rust WebAssembly module. The [architecture guide](/how-it-works) explains how they connect to the browser.
-  </Accordion>
-
-  <Accordion title="What are the display size and memory defaults?">
-    The framebuffer is 800 × 600 RGBA. Calling `init_emulator(0)` selects 512 MB of RAM; callers can choose another size. Large allocations may exceed a browser's available memory.
-  </Accordion>
-</AccordionGroup>
-
-## Find Your Way Around
-
-<CardGroup cols={2}>
-  <Card title="Interface Tour" icon="desktop" href="/guides/web-interface">
-    Learn where to find display modes, uploads, execution controls, and logs.
-  </Card>
-
-  <Card title="Troubleshooting & FAQ" icon="circle-question" href="/faq">
-    Understand limitations and work through common setup questions.
-  </Card>
-</CardGroup>
+Ordinary Play Store apps, multidex, JNI, and Google Play Services are not supported. Read [APK compatibility](/android/supported-apks) before loading your own file.

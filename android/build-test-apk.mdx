@@ -1,55 +1,38 @@
 ---
-title: "Build and Package a Test APK for NekoDroid HLE"
+title: "Build Test APKs for NekoDroid HLE Runner"
 sidebarTitle: "Build Test APK"
-description: "Create minimal Android test APKs for NekoDroid's HLE runner. Regenerate fixtures with cargo test, write Smali, assemble with smali, and package into a ZIP."
-keywords:
-  - "apk"
-  - "smali"
-  - "dex"
-  - "build"
-  - "test"
-  - "fixture"
-  - "cargo"
-  - "nekodroid"
+description: "Build minimal Android APKs for NekoDroid. Regenerate fixtures from Rust, write Smali, assemble with smali, and package into ZIP."
 ---
 
-NekoDroid ships with built-in test fixtures, but you can also author your own minimal APKs from Smali sources. This page shows you how to regenerate the committed fixtures using `cargo test`, how to write a minimal Smali program, and how to package it into a ZIP that NekoDroid's HLE interpreter can load.
+NekoDroid ships with built-in test fixtures written in pure Rust, but you can also author your own APKs from Smali. This page shows how to regenerate the committed fixtures using `cargo test`, how to write a minimal Smali program, and how to package it into a ZIP that the HLE interpreter can load.
 
 ## Regenerate fixtures with cargo test
 
-The fastest way to rebuild `testdata/hello.apk`, `testdata/hello_println.dex`, and `testdata/bad.apk` is to run the in-tree test:
+Run the in-tree test to rebuild `testdata/hello.apk`, `testdata/hello_println.dex`, and `testdata/bad.apk`:
 
-<CodeGroup>
-
-```bash Bash
+```bash
 cargo test --lib write_fixtures_to_testdata
 ```
 
-</CodeGroup>
-
-This test calls `fixture::build_hello_apk()` and writes the bytes directly to `testdata/`. The resulting `hello.apk` contains:
+This calls `fixture::build_hello_apk()` and writes bytes to `testdata/`. The `hello.apk` fixture contains:
 
 - `classes.dex` with a single class `Lcom/nekodroid/Hello;`
 - A text `AndroidManifest.xml` with package `com.nekodroid` and activity `Lcom/nekodroid/Hello;`
 - No native libraries or resources
 
-The `bad.apk` fixture is just the literal bytes `b"not-an-apk"` and is used to verify error handling.
+The `bad.apk` fixture is exactly the bytes `b"not-an-apk"` and is used to verify error handling.
 
-<Note>
-  You do not need Android Studio, Gradle, or the Android SDK to rebuild these fixtures. Everything is generated in pure Rust inside `src/android/fixture.rs`.
-</Note>
+You do not need Android Studio, Gradle, or the Android SDK to rebuild these fixtures. Everything is generated in pure Rust inside `src/android/fixture.rs`.
 
 ## Author a minimal Smali program
 
-If you prefer to write human-readable Dalvik assembly, you can use [smali](https://github.com/JesusFreke/smali) to assemble `.smali` files into `.dex` or `.apk`.
+If you prefer human-readable Dalvik assembly, use [smali](https://github.com/JesusFreke/smali) to assemble `.smali` into `.dex` or `.apk`.
 
 ### Step 1: Write Hello.smali
 
-Create a file named `Hello.smali` with the following source. It loads a string constant, invokes the HLE `println` stub, and returns.
+Create a file with this source. It loads a string constant, invokes the HLE `println` stub, and returns.
 
-<CodeGroup>
-
-```smali Smali
+```smali
 .class public Lcom/nekodroid/Hello;
 .super Ljava/lang/Object;
 
@@ -64,71 +47,51 @@ Create a file named `Hello.smali` with the following source. It loads a string c
 .end method
 ```
 
-</CodeGroup>
-
-<Info>
-  NekoDroid's HLE host recognizes `Lnekodroid/Hle;->println` and `Ljava/io/PrintStream;->println` as the same logging stub. Using `Lnekodroid/Hle;` keeps your test code independent of the full `java.io` package.
-</Info>
-
 ### Step 2: Assemble with smali
 
-Install [smali](https://github.com/JesusFreke/smali) and run:
+Install smali and run:
 
-<CodeGroup>
-
-```bash Bash
+```bash
 java -jar smali.jar assemble Hello.smali -o classes.dex
 ```
 
-</CodeGroup>
-
-This produces a `classes.dex` file containing the compiled Dalvik bytecode for your class.
+This produces a `classes.dex` file with the compiled bytecode.
 
 ### Step 3: Package into an APK
 
-An APK is just a ZIP file with a specific layout. Create it with any ZIP tool:
+An APK is a ZIP file with a specific layout. Package it with any ZIP tool:
 
-<CodeGroup>
-
-```bash Bash
+```bash
 zip hello.apk classes.dex
 ```
 
-</CodeGroup>
+For NekoDroid to read the package name and launcher activity, add a minimal text `AndroidManifest.xml`:
 
-For NekoDroid to read the package name and launcher activity, you can also add a minimal `AndroidManifest.xml`:
-
-<CodeGroup>
-
-```xml AndroidManifest.xml (minimal)
+```text
 #nekodroid-manifest
 package=com.nekodroid
 activity=Lcom/nekodroid/Hello;
 ```
 
-</CodeGroup>
+Then include it in the ZIP:
 
-```bash Bash
+```bash
 zip hello.apk classes.dex AndroidManifest.xml
 ```
 
-<Warning>
-  Do not add `META-INF`, `resources.arsc`, or `lib/` directories. NekoDroid ignores them, and they only increase file size toward the 32 MiB upload cap.
-</Warning>
+Do not add `META-INF`, `resources.arsc`, or `lib/` directories. NekoDroid ignores them, and they add size toward the 32 MiB upload cap.
 
-## Tips to stay within MVP opcodes
+## Keep bytecode within MVP opcodes
 
-To ensure your APK runs in NekoDroid's HLE interpreter, follow these guidelines when writing Smali or generating DEX bytecode:
+To run in the HLE interpreter, follow these guidelines:
 
-1. **Use only integer arithmetic.** Stick to `add-int`, `sub-int`, `mul-int`, and their `/2addr` variants. Floating-point opcodes are not implemented.
-2. **Avoid exceptions.** There is no exception table support in the MVP interpreter. Keep control flow limited to `if-*`, `goto`, and method calls.
-3. **Keep arrays one-dimensional.** `new-array`, `array-length`, `aget`, and `aput` work, but multi-dimensional or sparse arrays are untested.
-4. **Invoke only HLE stubs or methods you define.** Framework calls outside the stub list will return `0` silently, which can hide bugs.
-5. **Test with the arith fixture pattern.** If you want to verify arithmetic, model your test after the in-tree `build_arith_dex` fixture:
+1. Use only integer arithmetic: `add-int`, `sub-int`, `mul-int`, and their `/2addr` variants.
+2. Avoid exceptions. Control flow is limited to `if-*`, `goto`, and method calls.
+3. Keep arrays one-dimensional. `new-array`, `array-length`, `aget`, and `aput` work.
+4. Invoke only HLE stubs or methods you define. Framework calls outside the stub list return `0` silently.
+5. Model arithmetic tests after the in-tree `build_arith_dex` fixture pattern:
 
-<CodeGroup>
-
-```smali Smali (arith pattern)
+```smali
     const/4 v0, 0x2
     const/4 v1, 0x3
     add-int/2addr v0, v1
@@ -136,37 +99,20 @@ To ensure your APK runs in NekoDroid's HLE interpreter, follow these guidelines 
     return-void
 ```
 
-</CodeGroup>
+This computes `2 + 3 = 5` and logs `5`.
 
-This pattern computes `2 + 3 = 5` and logs `5` through the HLE `printInt` stub.
+## Verify in the browser
 
-## Verify your APK in the browser
+After packaging, start the dev server and test:
 
-After packaging your APK, start the dev server and test it immediately:
-
-<CodeGroup>
-
-```bash Bash
+```bash
 wasm-pack build --target web
 npm run dev
 ```
 
-</CodeGroup>
+Open `http://localhost:5173`, click **Load APK**, select your file, then click **Run APK (HLE)**. Check the logcat panel for output. If the system log says "HLE Dalvik ran 0 steps" and the panel is empty, the VM likely hit an unimplemented opcode. Disassemble your DEX with `baksmali` and compare every instruction against the [supported opcodes](/android/supported-apks#mvp-dalvik-opcodes).
 
-Open [http://localhost:5173](http://localhost:5173), click **Load APK**, select your file, then click **Run APK (HLE)**. Check the logcat panel for your output. If the system log says `HLE Dalvik ran 0 steps` and the panel is empty, the VM most likely hit an unimplemented opcode. NekoDroid does not print the halt reason, so disassemble your DEX (for example with `baksmali`) and compare every instruction against the [Dalvik Opcodes](/reference/dalvik-opcodes) table.
+## Related pages
 
-## Next steps
-
-<CardGroup>
-  <Card title="Run an APK" icon="play" href="/android/run-apk">
-    Load and launch your custom APK in the NekoDroid browser UI.
-  </Card>
-
-  <Card title="Supported APKs" icon="check-circle" href="/android/supported-apks">
-    Review the full requirements, HLE stubs, and unsupported features list.
-  </Card>
-
-  <Card title="Dalvik Opcodes Reference" icon="book-open" href="/reference/dalvik-opcodes">
-    Browse every implemented opcode with hex values and behavior notes.
-  </Card>
-</CardGroup>
+- [Run an APK](/android/run-apk): Load and launch APKs in the browser
+- [Supported APKs](/android/supported-apks): Compatibility requirements and HLE stubs

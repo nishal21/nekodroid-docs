@@ -1,213 +1,80 @@
 ---
-title: "Install NekoDroid: Prerequisites, Build, and Deploy"
+title: "Install NekoDroid and Build the Browser Emulator Locally"
 sidebarTitle: "Installation"
-description: "Install Rust, wasm-pack, and Node to build NekoDroid. Learn production builds, static deployment with custom headers, and how to resolve common build and runtime issues."
-keywords:
-  - "NekoDroid installation"
-  - "wasm-pack setup"
-  - "Rust WebAssembly"
-  - "Vite build"
-  - "deploy static site"
-  - "nekodroid build"
+description: "Set up Rust, wasm-pack, and a compatible Node.js version, build NekoDroid's WebAssembly module, and preview the browser interface locally."
 ---
 
-This guide walks you through installing the required tools, building NekoDroid from source, creating production builds, and deploying the static output to any web host.
+This page covers the tools and commands you need to build NekoDroid locally.
 
-## Prerequisites
+## Requirements
 
-You need three tools installed on your system before building NekoDroid.
+| Tool | Requirement |
+| --- | --- |
+| Rust | Stable toolchain with `wasm32-unknown-unknown` |
+| wasm-pack | Builds the Rust crate and JavaScript bindings |
+| Node.js | `^20.19.0` or `>=22.12.0`, required by the locked Vite version |
+| npm | Installs the browser interface dependencies |
 
-<Tabs>
-  <Tab title="Rust">
-    Install Rust via [rustup](https://rustup.rs/):
+Install Rust from [rustup.rs](https://rustup.rs) and Node.js from [nodejs.org](https://nodejs.org). Then add the Rust target and install wasm-pack:
 
-    ```bash
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-    ```
-
-    Then add the WebAssembly target:
-
-    ```bash
-    rustup target add wasm32-unknown-unknown
-    ```
-
-    Verify with `rustc --version`. NekoDroid uses the 2024 edition.
-  </Tab>
-  <Tab title="wasm-pack">
-    Install wasm-pack from [wasm-pack.rs](https://rustwasm.github.io/wasm-pack/installer/):
-
-    ```bash
-    curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-    ```
-
-    Or install via cargo:
-
-    ```bash
-    cargo install wasm-pack
-    ```
-
-    The first `wasm-pack build` compiles about 256 crates and can take 8 minutes. Subsequent builds are fast (1 to 2 seconds).
-  </Tab>
-  <Tab title="Node.js">
-    Install Node.js 18 or later from [nodejs.org](https://nodejs.org/) or via your system package manager. Then verify npm is available:
-
-    ```bash
-    node --version
-    npm --version
-    ```
-  </Tab>
-</Tabs>
-
-## Clone and Install
-
-Once the prerequisites are in place, clone the repository and install JavaScript dependencies.
-
-```bash
-git clone https://github.com/nishal21/NekoDroid.git
-cd NekoDroid
-npm install
+```bash Install build tools
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
 ```
 
-The `npm install` step fetches Vite 7.3.1, TypeScript 5.9.3, and the Wasm loader plugins.
+Check that the commands are available:
 
-## Build the Project
-
-NekoDroid has two build targets: the Wasm module and the full production site.
-
-### Development Build
-
-For local development, build the Wasm module and start the Vite dev server:
-
-```bash
-wasm-pack build --target web
-npm run dev
+```bash Check installed tools
+rustc --version
+wasm-pack --version
+node --version
+npm --version
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser. The dev server supports hot module replacement for TypeScript changes, but you must rebuild the Wasm module manually when Rust source changes.
+## Build and Run
 
-### Available Scripts
+<Steps>
+  <Step title="Get the source">
+    ```bash Clone NekoDroid
+    git clone https://github.com/nishal21/NekoDroid.git
+    cd NekoDroid
+    npm install
+    ```
+  </Step>
+  <Step title="Build WebAssembly">
+    ```bash Build the Wasm package
+    npm run build:wasm
+    ```
 
-| Script | Command | Purpose |
-| --- | --- | --- |
-| `dev` | `vite` | Start the development server |
-| `build:wasm` | `wasm-pack build --target web` | Compile Rust to Wasm only |
-| `build` | `npm run build:wasm && tsc && vite build` | Full production build |
-| `preview` | `vite preview` | Preview the production build locally |
-| `test` | `cargo test --lib` | Run Rust unit tests |
+    This runs `wasm-pack build --target web`. The generated bindings and binary live in `pkg/`.
+  </Step>
+  <Step title="Open the interface">
+    ```bash Start Vite
+    npm run dev
+    ```
 
-### Production Build
+    Open the URL printed by Vite, normally [http://localhost:5173](http://localhost:5173). Rebuild the Wasm package after changing Rust source.
+  </Step>
+</Steps>
 
-To create an optimized build for deployment:
+## Production Build
 
-```bash
+```bash Build and preview
 npm run build
-```
-
-This performs three steps in sequence:
-
-1. `wasm-pack build --target web` compiles the Rust crate with Link Time Optimization (LTO) enabled in release mode
-2. `tsc` type-checks the TypeScript source
-3. `vite build` bundles the frontend and outputs static files to the `dist/` directory
-
-The resulting Wasm module is approximately 16 KB (plus the JS glue), and the full site is suitable for static hosting.
-
-## Preview the Production Build
-
-Before deploying, preview the production build locally to verify everything works:
-
-```bash
 npm run preview
 ```
 
-This serves the `dist/` directory on a local port so you can test the optimized output.
+`npm run build` builds Wasm, checks TypeScript, and bundles the interface into `dist/`. `npm run preview` serves that output locally.
 
-## Deploy to Static Hosting
+## Common Problems
 
-The `dist/` directory produced by `npm run build` is a fully static site. You can deploy it to any static web host.
+**Vite reports an unsupported Node version:** use Node.js that satisfies `^20.19.0 || >=22.12.0`. A dependency accepting Node 18 does not mean the whole project supports it.
 
-### Important: Wasm MIME Type and Caching
+**The browser cannot load Wasm:** rebuild with `npm run build:wasm` and check the browser's network and console errors. Confirm `pkg/nekodroid.js` and `pkg/nekodroid_bg.wasm` were generated.
 
-WebAssembly files must be served with the correct `Content-Type: application/wasm` header. NekoDroid includes a `public/_headers` file that your host should respect:
-
-```text
-/*
-  X-Content-Type-Options: nosniff
-
-/*.wasm
-  Content-Type: application/wasm
-  Cache-Control: public, max-age=31536000, immutable
-```
-
-<Note>
-  If your host does not support `_headers` (for example, GitHub Pages), add equivalent rules in your host's configuration panel or use a custom server with proper MIME type mappings.
-</Note>
-
-### Deployment Options
-
-<CardGroup cols={2}>
-  <Card title="Netlify / Vercel" icon="cloud">
-    Drag the `dist/` folder into the deployment UI. The `_headers` file is automatically processed.
-  </Card>
-
-  <Card title="Cloudflare Pages" icon="cloud">
-    Connect your GitHub repository or upload the `dist/` folder. Add a `_headers` rule in the dashboard if needed.
-  </Card>
-
-  <Card title="AWS S3 + CloudFront" icon="aws">
-    Upload `dist/` to an S3 bucket. Set the `.wasm` object metadata to `Content-Type: application/wasm` and configure CloudFront caching.
-  </Card>
-
-  <Card title="Nginx / Apache" icon="server">
-    Copy `dist/` to your web root. Add the Wasm MIME type in your server config if the `_headers` file is not processed.
-  </Card>
-</CardGroup>
-
-## Troubleshooting
-
-<Accordion title="wasm-pack build fails with static_mut_refs error">
-  Ensure you are using Rust stable with the 2024 edition. NekoDroid uses `AtomicU32` with `Ordering::Relaxed` instead of `static mut` references. If you see this error in your own fork, replace `static mut` patterns with atomics or `std::sync::OnceLock`.
-</Accordion>
-
-<Accordion title="Vite cannot resolve .wasm imports directly">
-  Do not import `.wasm` files directly from TypeScript. Instead, import the JS glue generated by wasm-pack (`../pkg/nekodroid.js`), and call `wasm_memory()` after `init()` if you need direct memory access.
-</Accordion>
-
-<Accordion title="First build is very slow">
-  The initial `wasm-pack build` compiles all Rust dependencies from source. This is expected and can take 8 minutes. Delete `target/` or run `cargo clean` if you want to force a full rebuild later.
-</Accordion>
-
-<Accordion title="Browser shows a blank page after deployment">
-  Check that `.wasm` files are served with `Content-Type: application/wasm`. Use your browser's Network tab to inspect the response headers. If the type is `application/octet-stream`, the WebAssembly module will not instantiate.
-</Accordion>
-
-<Accordion title="Out of memory during Android boot">
-  Increase the RAM allocation in `src/main.ts` by passing a larger value to `init_emulator()`:
-
-  ```typescript
-  init_emulator(512); // 512 MB
-  ```
-
-  The default is 128 MB, and the maximum is 4096 MB.
-</Accordion>
-
-## Verify Your Installation
-
-Run the Rust unit tests to verify the build is healthy:
-
-```bash
-cargo test --lib
-```
-
-You should see all tests pass. The optional goldfish kernel tests are skipped if `test-images/zImage` is not present.
+**An allocation fails:** `init_emulator(0)` requests 512 MiB of RAM. Browser memory limits can prevent large allocations. Use a smaller nonzero argument through the [JavaScript API](/reference/wasm-api).
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="play" href="/quickstart">
-    Run your first demo program and hello.apk in minutes.
-  </Card>
-
-  <Card title="How It Works" icon="cogs" href="/how-it-works">
-    Understand the browser-to-Wasm architecture, CPU pipeline, and rendering loop.
-  </Card>
-</CardGroup>
+- [Quickstart](/quickstart): step through the built-in ARM demo.
+- [Development checks](/development): run tests and build checks before submitting changes.

@@ -1,143 +1,113 @@
 ---
-title: "APK Requirements and Supported Features in NekoDroid"
+title: "APK Requirements for NekoDroid HLE Runner"
+description: "Check which Android APKs work in NekoDroid. Review single-DEX, 32 MiB cap, stubbed framework methods, MVP opcodes, and unsupported features."
 sidebarTitle: "Supported APKs"
-description: "Understand which Android APKs work in NekoDroid's browser emulator. Review MVP opcode requirements, stubbed framework methods, unsupported features, and error behaviors."
-keywords:
-  - "apk"
-  - "supported"
-  - "requirements"
-  - "dalvik"
-  - "opcodes"
-  - "hle"
-  - "limitations"
-  - "android"
 ---
 
-NekoDroid's APK path is a constrained high-level emulation (HLE) Dalvik runner, not a full Android OS. This page lists exactly what an APK must look like to run successfully, which framework methods are stubbed, and which Android features are intentionally out of scope.
+NekoDroid's APK runner uses constrained high-level emulation (HLE) of Dalvik bytecode, not a full Android OS. This page lists what an APK must look like to run, which framework methods are stubbed, and which Android features are out of scope.
 
 ## APK requirements checklist
-
-Before you load an APK, verify it meets all of the following criteria:
 
 | Requirement | Details |
 | --- | --- |
 | Single `classes.dex` | Multidex is not supported. Only one DEX file inside the APK ZIP is read. |
-| No JNI / native `.so` libraries | Native code never runs. Calls to `native` methods are stubbed and return `0`, so any logic that depends on them silently does nothing. |
-| Entry point | The launcher class (from the manifest, or the first DEX class) must have a method named `main` or `onCreate`. `main` gets a null `String[]`; `onCreate` gets a fresh instance and no `Bundle`. |
-| MVP opcodes only | All bytecode must use opcodes from the [MVP list](#mvp-dalvik-opcodes). Unimplemented opcodes halt the VM. |
-| Framework calls | Only stubbed HLE methods such as `Log`, `println`, and `TextView.setText` produce output. Other framework calls succeed silently and return `0`. |
-| File size | 32 MiB maximum, enforced by both the web UI and `load_apk`. |
-
-<Warning>
-  Play Store APKs will almost always fail because they depend on Google Play Services, multidex, JNI, and large framework surface areas that NekoDroid does not implement.
-</Warning>
+| No JNI or native `.so` libraries | Native code never runs. Calls to `native` methods return `0` silently. |
+| Entry point | The launcher class must have `main` or `onCreate`. `main` receives a null `String[]`. `onCreate` receives a fresh instance and no `Bundle`. |
+| MVP opcodes only | Bytecode must use only opcodes from the [MVP Dalvik opcodes](#mvp-dalvik-opcodes) list. Unimplemented opcodes halt the VM. |
+| Framework calls | Only stubbed HLE methods produce output. Other framework calls return `0` silently. |
+| File size | 32 MiB maximum, enforced by both the web UI and `load_apk()`. |
 
 ## MVP Dalvik opcodes
 
-The following opcodes are implemented and tested in NekoDroid's HLE interpreter:
+The following opcodes are implemented. Any opcode outside this set causes the VM to halt with `AndroidError::UnimplementedOpcode`. The halt reason is stored internally but not written to logs.
 
 | Opcode | Hex | Behavior |
 | --- | --- | --- |
 | `nop` | `0x00` | No operation |
-| `move`, `move/from16`, `move/16` | `0x01`, `0x02`, `0x03` | Register-to-register moves |
-| `move-object`, `move-object/from16` | `0x07`, `0x08` | Object reference moves |
+| `move` / `move/from16` / `move/16` | `0x01` / `0x02` / `0x03` | Register moves |
+| `move-object` / `move-object/from16` | `0x07` / `0x08` | Object reference moves |
 | `move-result` / `move-result-object` | `0x0a` / `0x0c` | Capture return values |
 | `return-void` / `return` / `return-object` | `0x0e` / `0x0f` / `0x11` | Method returns |
-| `const/4`, `const/16`, `const`, `const/high16` | `0x12` to `0x15` | Load integer constants |
-| `const-string`, `const-string/jumbo` | `0x1a`, `0x1b` | Load strings |
-| `check-cast` | `0x1f` | Soft check (keeps object as-is) |
-| `array-length` / `new-array` | `0x21` / `0x23` | Array creation and length read |
+| `const/4` / `const/16` / `const` / `const/high16` | `0x12` to `0x15` | Load integer constants |
+| `const-string` / `const-string/jumbo` | `0x1a` / `0x1b` | Load strings |
+| `check-cast` | `0x1f` | Soft check, keeps object as-is |
+| `array-length` / `new-array` | `0x21` / `0x23` | Array life |
 | `new-instance` | `0x22` | Allocate HLE object stub |
 | `goto` / `goto/16` | `0x28` / `0x29` | Unconditional branches |
-| `if-eq` / `if-ne` / `if-lt` … `if-le` | `0x32`–`0x37` | Conditional branches (register pairs) |
+| `if-eq` / `if-ne` / `if-lt` / `if-ge` / `if-gt` / `if-le` | `0x32` to `0x37` | Conditional branches (register pairs) |
 | `if-eqz` / `if-nez` | `0x38` / `0x39` | Conditional branches (zero compare) |
 | `aget` / `aput` | `0x44` / `0x4b` | Array get and put |
-| `iget-object` / `iput-object` | `0x54` / `0x5b` | Minimal stub (treats as no-op or null) |
+| `iget-object` / `iput-object` | `0x54` / `0x5b` | Minimal stub: no-op or `null` |
 | `sget-object` / `sput-object` | `0x62` / `0x69` | Provides dummy `PrintStream` for `System.out` |
 | `invoke-virtual` / `invoke-super` / `invoke-direct` / `invoke-static` / `invoke-interface` | `0x6e` to `0x72` | Method calls with HLE interception |
-| `add-int` / `sub-int` / `mul-int` | `0x90`–`0x92` | 32-bit integer arithmetic |
-| `add-int/2addr` / `sub-int/2addr` / `mul-int/2addr` | `0xb0`–`0xb2` | Two-address arithmetic |
+| `add-int` / `sub-int` / `mul-int` | `0x90` to `0x92` | 32-bit integer arithmetic |
+| `add-int/2addr` / `sub-int/2addr` / `mul-int/2addr` | `0xb0` to `0xb2` | Two-address arithmetic |
 
-Any opcode outside this set halts the VM with `AndroidError::UnimplementedOpcode` and stores the reason `unimplemented opcode 0xNN at pc=N` internally. The reason is not written to the logcat panel, and `run_dalvik_batch` returns `0` for that batch.
+If an unsupported opcode executes, `run_dalvik_batch` returns `0` for that batch and `get_apk_info()` shows `"halted": true`.
 
-## Supported HLE framework stubs
+## Stubbed HLE framework methods
 
-When the interpreter reaches an `invoke-*` instruction, it checks `HleHost::try_invoke` before running DEX code. The following class and method signatures are stubbed:
+When the interpreter reaches `invoke-*`, it checks `HleHost::try_invoke` before searching the DEX file. The following methods are stubbed:
 
 | Class | Method | Behavior |
 | --- | --- | --- |
-| `Landroid/util/Log;` | Any method, such as `d`, `i`, `w`, `e` (tag, msg) | Logs `[tag] msg` (tag defaults to `App`) to logcat and canvas text |
-| `Ljava/io/PrintStream;` | `println(String)` | Logs the string to logcat |
-| `Lnekodroid/Hle;` | `println(String)` | Same as above |
-| `Lnekodroid/Hle;` | `printInt(int)` | Logs the integer value |
-| `*TextView*` | `setText(String)` | Updates `canvas_text` and logs the change |
-| Any class | `<init>` (constructors) | No-op |
-| Any class | `setContentView`, `setTitle` | No-op |
-| Touch helpers | `getLastTouchX()`, `getLastTouchY()`, `isTouchDown()` | Returns the last touch state forwarded from `dalvik_touch` |
+| `Landroid/util/Log;` | Any method (e.g. `d`, `i`, `w`, `e`) | Logs `[tag] msg` with tag defaulting to `App`, and appends to `canvas_text` |
+| `Ljava/io/PrintStream;` | `println(String)` | Logs string to output buffer |
+| `Lnekodroid/Hle;` | `println(String)` | Same as PrintStream |
+| `Lnekodroid/Hle;` | `printInt(int)` | Converts to string and logs |
+| `*TextView*` | `setText(String)` | Sets `canvas_text` and logs the message |
+| Any class | `<init>` | No-op, returns `0` |
+| Any class | `setContentView` / `setTitle` | No-op, returns `0` |
+| Touch helpers | `getLastTouchX` / `getLastTouchY` / `isTouchDown` | Returns last forwarded touch state from `dalvik_touch` |
 
-If a method is not in the HLE table and no matching DEX-encoded method exists, NekoDroid returns `Value::Int(0)` as a safe fallback rather than crash.
+If a method is not in the HLE table and no matching DEX-encoded method exists, the call returns `Value::Int(0)` as a safe fallback.
 
-## How the manifest is read
+## Manifest parsing
 
 | Manifest format | What NekoDroid extracts |
 | --- | --- |
-| Text manifest starting with `#nekodroid-manifest` or `package=` | `package=` and `activity=` lines (used by the test fixtures) |
-| Binary AXML (normal Android builds) | Best-effort package name only |
-| Missing or unreadable | Package guessed from the first DEX class; activity is the first class whose name contains `Hello`, `Main`, or `Activity`, else the first class |
+| Text starting with `#nekodroid-manifest` or `package=` | `package=` and `activity=` lines (used by test fixtures) |
+| Binary AXML (standard Android builds) | Best-effort package name only |
+| Missing or unreadable | Package guessed from first DEX class; activity is first class containing `Hello`, `Main`, or `Activity`, otherwise the first class |
 
-## What is not supported
+## Unsupported features
 
-The following features are explicitly out of scope for the HLE runner:
+These are explicitly out of scope:
 
-| Feature | Why it is not supported |
+| Feature | Reason |
 | --- | --- |
-| Play Store apps in general | They require full ART, zygote, and Google services |
+| Play Store apps | Require full ART, zygote, and Google services |
 | Multidex (`classes2.dex`, etc.) | Only `classes.dex` is scanned |
-| JNI / native `.so` libraries | No native loader or ARM syscall ABI for native libraries |
-| Full ART JIT / AOT compilation | Only a register-based interpreter runs |
+| JNI / native `.so` libraries | No native loader or ARM syscall ABI |
+| Full ART JIT / AOT | Only a register-based interpreter runs |
 | SurfaceFlinger / hardware acceleration | Canvas drawing is limited to bitmap text blit |
-| Binder-heavy apps (zygote fidelity) | Binder is stubbed; no real IPC |
-| Reflection, classloaders, exceptions | Not implemented in the MVP interpreter |
+| Binder / IPC | Binder is stubbed |
+| Reflection, classloaders, exceptions | Not implemented in MVP interpreter |
 | Floating-point opcodes | Only integer arithmetic is supported |
 
 ## Error behaviors
 
-NekoDroid handles malformed or incompatible APKs with specific error paths:
+**Missing PK header or corrupt ZIP**
 
-<AccordionGroup>
-  <Accordion title="Missing PK header or corrupt ZIP">
-    If the file does not start with `PK`, `load_apk_bytes` returns `AndroidError::NotZip` immediately and the UI reports "APK load failed".
-  </Accordion>
+If the file does not start with `PK`, `load_apk_bytes` returns `AndroidError::NotZip` and the UI reports "APK load failed".
 
-  <Accordion title="Missing classes.dex">
-    Valid ZIP without a DEX file returns `AndroidError::MissingDex`. The UI shows "APK load failed (see console)".
-  </Accordion>
+**Missing classes.dex**
 
-  <Accordion title="Unimplemented opcode during execution">
-    The VM sets `halted = true` and stores the reason (`unimplemented opcode 0xNN at pc=N`) internally. The batch stops, the UI reports `HLE Dalvik ran 0 steps`, and the logcat panel shows only output produced before the halt. Check `get_apk_info()` for `"halted": true`.
-  </Accordion>
+A valid ZIP with no DEX file returns `AndroidError::MissingDex`. The UI shows "APK load failed (see console)".
 
-  <Accordion title="No entry method found">
-    If neither `main` nor `onCreate` exists on the detected class, launch fails with `no main/onCreate on <class>`, `launch_apk()` returns `false`, and the UI logs `Launch failed`.
-  </Accordion>
+**Unimplemented opcode during execution**
 
-  <Accordion title="bad.apk fixture">
-    `testdata/bad.apk` is intentionally corrupt (`b"not-an-apk"`). It exists to verify that the error path returns quickly and does not panic.
-  </Accordion>
-</AccordionGroup>
+The VM sets `halted = true` and stores the reason internally. The batch stops, the UI reports "HLE Dalvik ran 0 steps", and the logcat panel shows only output from before the halt. Check `get_apk_info()` for `"halted": true`.
 
-## Next steps
+**No entry method found**
 
-<CardGroup>
-  <Card title="Run an APK" icon="play" href="/android/run-apk">
-    Try loading and running a supported APK in the browser UI.
-  </Card>
+If the detected class has neither `main` nor `onCreate`, `launch_apk()` returns `false` and the UI logs "Launch failed".
 
-  <Card title="Build a Test APK" icon="hammer" href="/android/build-test-apk">
-    Author a minimal APK from Smali and package it for NekoDroid HLE.
-  </Card>
+**bad.apk fixture**
 
-  <Card title="Dalvik Opcodes Reference" icon="book-open" href="/reference/dalvik-opcodes">
-    Browse the full opcode behavior details and instruction formats.
-  </Card>
-</CardGroup>
+`testdata/bad.apk` is intentionally corrupt (`b"not-an-apk"`). It verifies that the error path returns quickly without panicking.
+
+## Related pages
+
+- [Run an APK](/android/run-apk): Step-by-step browser UI guide
+- [Build Test APK](/android/build-test-apk): Build fixtures from Smali or Rust

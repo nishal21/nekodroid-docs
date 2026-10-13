@@ -1,47 +1,38 @@
 ---
-title: "NekoDroid Web Interface: Panels, Canvas, and Input Mapping"
+title: "NekoDroid Web Interface Reference"
 sidebarTitle: "Web Interface"
-description: "Tour the NekoDroid browser UI: canvas modes, live metrics, console log, debug controls, and input mapping for keyboard and touch events."
+description: "Tour the NekoDroid browser UI: the canvas, render modes, metrics panel, console log, debug controls, and how input maps to MMIO registers."
 ---
 
-NekoDroid exposes the full emulator through a Vite + TypeScript web UI served at `http://localhost:5173`. This page walks through each panel and control so you know where every feature lives and how to interact with running programs.
-
-<Frame caption="Conceptual runtime map, not a screenshot of the interface.">
-  <img
-    src="/images/runtime-map.svg"
-    alt="Browser controls call two separate WebAssembly runtimes: ARM and Thumb CPU emulation, and APK Dalvik HLE."
-  />
-</Frame>
+This page covers every panel and control in the NekoDroid browser UI so you know how to interact with the emulator and running programs.
 
 ## Status Bar
 
 At the top of the page, a colored indicator shows the Wasm module state.
 
-| Indicator | Color | Meaning |
-| --- | --- | --- |
-| Initializing Wasm module... | Orange | The Rust binary is still loading. |
-| Wasm loaded | Green | The emulator is ready to accept commands. |
-| Failed to load Wasm module | Red | `wasm-pack` output is missing or incompatible. Rerun `wasm-pack build --target web` and refresh. |
+| Indicator | Meaning |
+| --- | --- |
+| Initializing Wasm module... | The Rust binary is still loading |
+| Wasm loaded | The emulator is ready |
+| Failed to load Wasm module | `wasm-pack` output is missing. Rebuild and refresh. |
 
 ## Canvas
 
-The 800x600 pixel canvas is the main display area. What it draws depends on the active render mode. When you click or touch the canvas, the UI translates browser coordinates into framebuffer coordinates and forwards the event to the emulator. Audio also initializes on the first click because the Web Audio API requires a user gesture.
+The 800x600 pixel canvas is the main display. What it draws depends on the active render mode. Clicking or touching the canvas translates browser coordinates into framebuffer coordinates and forwards the event to the emulator. Audio also initializes on the first click because the Web Audio API requires a user gesture.
 
 ### Render Modes
 
-Switch views with the five buttons under the canvas:
+Switch views with the buttons under the canvas:
 
 | Button | Effect |
 | --- | --- |
-| **Noise** | Full-screen xorshift noise generated inside the Wasm binary. |
-| **Gradient** | Horizontal color sweep that shifts each frame. |
-| **Plasma** | Animated plasma field using sinusoidal color waves. |
-| **VRAM** | Displays whatever the ARM program writes to framebuffer address `0x04000000`. |
-| **Pause** | Stops `requestAnimationFrame` updates but keeps the emulator alive. |
+| **Noise** | Full-screen xorshift noise generated in Wasm |
+| **Gradient** | Horizontal color sweep that shifts each frame |
+| **Plasma** | Animated plasma field using sinusoidal color waves |
+| **VRAM** | Displays what ARM programs write to `0x04000000` |
+| **Pause** | Stops `requestAnimationFrame` updates but keeps the emulator alive |
 
-<Note>
-  When you load a bare-metal binary with **Select & Load .bin**, the UI automatically switches to VRAM mode so your pixels are visible immediately.
-</Note>
+When you load a bare-metal binary with **Select & Load .bin**, the UI automatically switches to VRAM mode.
 
 ## Metrics Panel
 
@@ -49,68 +40,58 @@ Four live counters sit above the console:
 
 | Metric | What it measures |
 | --- | --- |
-| **FPS** | Frames drawn per second, updated every 500 ms. |
-| **Frames** | Total `requestAnimationFrame` callbacks since startup. |
-| **CPU Cycles** | Total ARM instructions retired from `get_cycle_count()`. |
-| **Mode** | Currently active render-mode label. |
-
-These numbers update once per frame to avoid layout thrashing.
+| **FPS** | Frames drawn per second |
+| **Frames** | Total `requestAnimationFrame` callbacks since startup |
+| **CPU Cycles** | Total ARM instructions retired |
+| **Mode** | Currently active render mode label |
 
 ## Console Log
 
 A scrolling terminal below the metrics shows timestamped events from both the TypeScript frontend and the Rust backend. Types are color-coded: green for successes, blue for information, amber for warnings. The log keeps the last 100 lines.
 
-You will see entries such as:
-
-```text
-VirtualCPU created: 800x600 RGBA framebuffer (1920000 bytes)
-ROM loaded: snake.bin (4912 bytes)
-CPU halted after 2847191 cycles
-```
-
 ## Debug Panel
 
 The **ARMv7 CPU Debug** panel on the right contains execution controls and uploaders.
 
-<Accordion title="Demo buttons">
-  - **Load Demo**: Loads 10 ARM instructions at `0x8000` that compute `R2 = R0 + R1`.
-  - **Hello UART**: Loads a hand-assembled program that prints "Hello World!" to the virtual UART at `0x10000000`.
-</Accordion>
+### Demo Buttons
 
-<Accordion title="Execution controls">
-  - **Step**: Execute one instruction and update the register grid.
-  - **Run 10**: Execute 10 instructions in one burst.
-  - **Run / Stop**: Toggle continuous execution. The CPU runs in batches and updates the debug panel live.
-</Accordion>
+- **Load Demo**: Loads 10 ARM instructions at `0x8000` that compute `R2 = R0 + R1`
+- **Hello UART**: Loads a hand-assembled program that prints "Hello World!" to the virtual UART
 
-<Accordion title="Register grid">
-  Live view of `R0` through `R15` (with `SP`, `LR`, and `PC` labeled). Changed values flash cyan for 300 ms.
-</Accordion>
+### Execution Controls
 
-<Accordion title="Flags row">
-  Shows `N`, `Z`, `C`, `V` flags and an **ARM / THUMB** mode pill.
-</Accordion>
+- **Step**: Execute one instruction and update the register grid
+- **Run 10**: Execute up to 10 instructions
+- **Run / Stop**: Toggle continuous execution
 
-<Accordion title="Disassembly">
-  Next five instructions from the current `PC`, with the first one highlighted.
-</Accordion>
+### Register Grid
 
-<Accordion title="Uploaders">
-  - **Custom Hex**: Paste space-separated ARM instructions in hex.
-  - **Select & Load .bin**: Upload a compiled bare-metal binary.
-  - **Linux zImage + initrd**: Upload a kernel and initial ramdisk for Linux boot.
-  - **Load APK**: Select an APK file for the HLE Dalvik runtime.
-</Accordion>
+Live view of `R0` through `R15` (with `SP`, `LR`, and `PC` labeled). Values are shown as 8-digit uppercase hex. Changed values flash briefly so you do not miss updates during bursts.
+
+### Flags Row
+
+Shows `N`, `Z`, `C`, `V` condition flags and an **ARM / THUMB** mode pill. A bright pill means the flag is set.
+
+### Disassembly
+
+Next five instructions from the current `PC`, with the first one highlighted.
+
+### Uploaders
+
+- **Custom Hex**: Paste space-separated ARM machine code in hex
+- **Select & Load .bin**: Upload a compiled bare-metal binary
+- **Linux zImage + initrd**: Upload a kernel and ramdisk for Linux boot
+- **Load APK**: Select an APK for the HLE Dalvik runtime
 
 ## Input Mapping
 
-NekoDroid forwards browser input to MMIO registers so ARM programs can read keys and touch without knowing what a browser is.
+NekoDroid forwards browser input to MMIO registers so ARM programs can read keys and touch.
 
 ### Keyboard
 
-The frontend listens on `document` so you do not need to focus any element.
+The frontend listens on `document` so you do not need to focus any element. Arrow keys call `preventDefault()` so the page does not scroll.
 
-| Browser key | Keycode sent to `INPUT_KEY` (`0x10000008`) |
+| Browser key | Keycode sent to `INPUT_KEY` at `0x10000008` |
 | --- | --- |
 | ArrowUp / W | 38 |
 | ArrowDown / S | 40 |
@@ -121,17 +102,17 @@ The frontend listens on `document` so you do not need to focus any element.
 | Escape | 27 |
 | Other keys | Standard `keyCode` value |
 
-Arrow keys call `event.preventDefault()` so the page does not scroll. Key down and key up events are deferred by one frame to guarantee the ARM CPU sees the key for at least one full batch of instructions.
+Key events are deferred by one frame to guarantee the ARM CPU sees each key for at least one full batch.
 
 ### Touch / Mouse
 
-Events on the canvas are translated to framebuffer coordinates using `getBoundingClientRect()`:
+Events on the canvas are translated to framebuffer coordinates using `getBoundingClientRect()`.
 
 | Event | Behavior |
 | --- | --- |
-| `mousedown` | Sends `touch_down` at translated coordinates. Also initializes audio on first click. |
+| `mousedown` | Sends `touch_down` at translated coordinates. Initializes audio on first click. |
 | `mousemove` while pressed | Sends additional `touch_down` events for drag tracking. |
-| `mouseup` | Queues a `touch_up` for the next frame so the program has time to react. |
+| `mouseup` | Queues a `touch_up` for the next frame. |
 | `mouseleave` while pressed | Sends a cancel event with coordinates `(-1, -1)`. |
 
 The touch state is readable from two MMIO locations:
@@ -147,37 +128,17 @@ Programs can drive the Web Audio oscillator through two registers:
 
 | Register | Address | Bits |
 | --- | --- | --- |
-| `AUDIO_CTRL` | `0x10000018` | Bit 0 = enable, bits 1-2 = waveform (0-3) |
+| `AUDIO_CTRL` | `0x10000018` | Bit 0 = enable, bits 1-2 = waveform (0 square, 1 sine, 2 sawtooth, 3 triangle) |
 | `AUDIO_FREQ` | `0x1000001C` | Frequency in Hz |
 
-Waveform values map to Web Audio oscillator types: `0` = square, `1` = sine, `2` = sawtooth, `3` = triangle. Audio initializes on the first canvas click, so programs should be ready for the API to start suspended.
+Audio initializes on the first canvas click. Programs should be ready for the API to start suspended.
 
 ## Upload Limits
 
-<Note>
-  APK uploads have a 32 MiB cap, enforced by the file picker and Rust APK loader. Kernel images, initramfs files, and bare-metal binaries use separate loading paths; this APK cap does not apply to them.
-</Note>
-
-<Warning>
-  Large RAM allocations can exceed the browser's available memory. Calling `init_emulator(0)` selects 512 MB; choose a smaller allocation through the API if your device cannot accommodate it.
-</Warning>
+APK uploads have a 32 MiB soft cap, enforced by both the file picker and the Rust APK loader. Kernel images, initramfs files, and bare-metal binaries use separate loading paths. This cap does not apply to them.
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="CPU Debugger" icon="microchip" href="/guides/cpu-debugger">
-    Step through instructions, inspect registers, and upload custom hex programs.
-  </Card>
-
-  <Card title="Bare-Metal Programs" icon="code" href="/guides/bare-metal-programs">
-    Write C for NekoDroid, cross-compile with `arm-none-eabi-gcc`, and load your `.bin`.
-  </Card>
-
-  <Card title="Boot Linux" icon="linux" href="/guides/boot-linux">
-    Try the experimental kernel-loading path with a zImage and optional initrd.
-  </Card>
-
-  <Card title="Run APKs" icon="android" href="/android/run-apk">
-    Load APK files into the constrained Dalvik HLE runtime.
-  </Card>
-</CardGroup>
+- [CPU Debugger](/guides/cpu-debugger): Single-step instructions and inspect registers
+- [Bare-Metal Programs](/guides/bare-metal-programs): Write C and cross-compile for ARM
+- [Boot Linux](/guides/boot-linux): Try the experimental kernel loader

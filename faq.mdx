@@ -1,94 +1,94 @@
 ---
-title: "NekoDroid FAQ and Common Questions"
-description: "Find answers to common questions about NekoDroid, including what it emulates, browser support, APK compatibility, performance, licensing, and contributing."
+title: "NekoDroid FAQ: ARM Emulator, APK Runner, and Development"
+description: "Answers to common questions about NekoDroid, including what it emulates, browser support, APK compatibility, the memory model, and how to get help or contribute."
 sidebarTitle: "FAQ"
-keywords:
-  - "FAQ"
-  - "NekoDroid"
-  - "emulator"
-  - "ARM"
-  - "Android"
-  - "WebAssembly"
-  - "APK"
-  - "license"
 ---
 
-NekoDroid is a browser-native ARMv7 emulator written in Rust and compiled to WebAssembly with a Vite + TypeScript UI. This FAQ answers the most common questions about what it does, how it works, and what you can expect when using it.
+This FAQ covers common questions about NekoDroid, a browser-native ARMv7 emulator written in Rust and compiled to WebAssembly.
 
-<AccordionGroup>
-  <Accordion title="What is NekoDroid?">
-    NekoDroid is a browser-native emulator for ARMv7-era CPUs, built in Rust and compiled to WebAssembly using `wasm-bindgen`. It includes a constrained high-level emulation (HLE) Dalvik runner for small APKs, a bare-metal ARM program loader, Linux kernel boot helpers, and a debug UI with canvas rendering. The project is MIT licensed and has 116+ passing unit tests.
-  </Accordion>
+## What does NekoDroid emulate?
 
-  <Accordion title="Can NekoDroid run Play Store apps?">
-    No. NekoDroid is a constrained HLE runner: it parses `classes.dex` and interprets a subset of Dalvik opcodes with stubbed framework methods. It does not boot Android, run ART, or execute native libraries. Most real-world Play Store apps require multidex, JNI, Google Play Services, or Binder features that are outside the current scope. See the <a href="/android/supported-apks">Supported APKs</a> page for what works today.
-  </Accordion>
+NekoDroid emulates an ARMv7-era CPU core, including ARM and Thumb modes, plus VersatilePB peripherals such as PL011 UART, SP804 timer, PL190 VIC, and an 800x600 RGBA VRAM framebuffer at `0x04000000`. It runs in the browser via WebAssembly without plugins.
 
-  <Accordion title="Which browsers are supported?">
-    NekoDroid runs in any modern browser with WebAssembly support: Chrome, Firefox, Safari, and Edge. The build uses Vite 7 with `vite-plugin-wasm` and `vite-plugin-top-level-await`, which are compatible with all evergreen browsers. No plugins or extensions are required.
-  </Accordion>
+## Can it run Play Store APKs?
 
-  <Accordion title="How is performance in the browser?">
-    NekoDroid's Wasm ARM core executes instructions natively inside the browser, and benchmarks from early sessions show gradient rendering at ~46 FPS at 800x600 resolution. Full-screen noise mode runs at ~21 FPS, and plasma effects range from 5 to 15 FPS due to per-pixel trigonometry. APK HLE execution is interpreted and significantly slower than native Android, but it is suitable for small test fixtures and debugging.
-  </Accordion>
+No. NekoDroid includes a constrained high-level emulation (HLE) Dalvik runner that parses `classes.dex` and interprets a subset of Dalvik opcodes with stubbed framework methods. It does not boot Android, run ART, or execute native libraries (JNI). Most real-world APKs need multidex, Binder, Google Play Services, or native code, which are outside the current scope.
 
-  <Accordion title="What is the nesting doll architecture?">
-    NekoDroid's architecture is a stack of emulation layers that flows from the browser down to the guest:
+For APKs that work today, see [Supported APKs](/android/supported-apks).
 
-    ```text
-    Browser → Wasm (Rust) → ARM CPU (+ optional DEX HLE) → (future) Android OS → APK
-    ```
+## Which browsers are supported?
 
-    Right now the DEX HLE path runs selected APKs without booting a full Android OS. The long-term goal is richer Android support through goldfish kernel boot and expanded ART coverage.
-  </Accordion>
+Any modern browser with WebAssembly support, including Chrome, Firefox, Safari, and Edge. The build uses `vite-plugin-wasm` and `vite-plugin-top-level-await`, which are compatible with evergreen browsers.
 
-  <Accordion title="Is NekoDroid a full Android emulator?">
-    No. NekoDroid is intentionally a constrained HLE runner for Milestone 1. It does not emulate zygote, Binder fidelity, SurfaceFlinger, or the full ART JIT. It can run small static-main or onCreate APKs that use only stubbed framework methods. Full Android bring-up is a long-term research goal, not a current feature.
-  </Accordion>
+## What is the nesting-doll architecture?
 
-  <Accordion title="What is the license?">
-    NekoDroid is released under the MIT License. You can use, modify, and distribute it freely. See the `LICENSE` file in the repository for the full text.
-  </Accordion>
+The architecture is a stack of emulation layers:
 
-  <Accordion title="How do I build and run it locally?">
-    You need Rust stable with the `wasm32-unknown-unknown` target, `wasm-pack`, and Node.js. Then run:
+```text
+Browser -> Wasm (Rust) -> ARM CPU (+ optional DEX HLE) -> (future) Android OS -> APK
+```
 
-    ```bash
-    git clone https://github.com/nishal21/NekoDroid.git
-    cd NekoDroid
-    npm install
-    wasm-pack build --target web
-    npm run dev
-    ```
+The DEX HLE path runs selected APKs without booting a full Android OS. Linux kernel boot helpers exist for research, but full Linux userspace is experimental.
 
-    Open `http://localhost:5173` in your browser. Tests run with `cargo test --lib`.
-  </Accordion>
+## Is it a full Android emulator?
 
-  <Accordion title="How does the VRAM text blit work?">
-    When a running APK calls stubbed text-drawing hooks, the HLE runtime records the text. Calling `blit_dalvik_text_to_vram()` copies the accumulated lines into the emulator's 800x600 RGBA framebuffer, so they appear on the canvas. This is a lightweight way to visualize APK output without needing a full Android UI stack.
-  </Accordion>
+No. NekoDroid is intentionally a constrained HLE runner. It does not emulate zygote, Binder, SurfaceFlinger, or ART JIT. Full Android bring-up is a long-term research goal.
 
-  <Accordion title="What opcodes does the Dalvik interpreter support?">
-    The interpreter supports a minimal viable product (MVP) set of Dalvik opcodes, including `move`, `const/4`, `const/16`, `const-string`, `return`, `goto`, `if-*`, `invoke-*`, `new-instance`, array operations, and integer arithmetic. The full checklist is in `docs/OPCODE_MVP.md`. Unimplemented opcodes log cleanly and halt the VM.
-  </Accordion>
+## What is the license?
 
-  <Accordion title="How do I contribute?">
-    Check the <a href="/contributing">Contributing</a> page for setup instructions, safe staging rules, DEVLOG conventions, and references. All changes must pass `cargo test --lib` and `npm run build:wasm` before a PR. Do not stage local-only directories such as `browser-droid/`, `pkg/`, or `test-images/`.
-  </Accordion>
+NekoDroid is released under the MIT License. See the `LICENSE` file in the repository.
 
-  <Accordion title="Why does a test APK halt with an opcode error?">
-    The interpreter logs the unsupported opcode hex value and program counter, then halts cleanly. This is by design: it makes debugging straightforward. Check the logcat panel for the last line before the halt, then compare the opcode against `docs/OPCODE_MVP.md` to see if it is in the supported set.
-  </Accordion>
+## How do I build and run locally?
 
-  <Accordion title="Can I load custom ARM binaries?">
-    Yes. NekoDroid supports loading raw ARM and Thumb binaries, hex programs, and `.bin` ROM files. You can also paste ARM hex into the Custom Program panel and upload it to RAM at address `0x8000`. See the <a href="/guides/bare-metal-programs">Bare-Metal Programs</a> guide for details.
-  </Accordion>
+You need Rust stable with the `wasm32-unknown-unknown` target, `wasm-pack`, and Node.js.
 
-  <Accordion title="Does NekoDroid boot Linux?">
-    The emulator includes a Linux kernel boot helper (`boot_linux_kernel`) that sets up ATAGs and machine ID for the VersatilePB board, and boots a goldfish kernel with earlyprintk. Full Linux userspace is a work in progress. See the <a href="/guides/boot-linux">Boot Linux</a> guide for current status.
-  </Accordion>
-</AccordionGroup>
+```bash
+git clone https://github.com/nishal21/NekoDroid.git
+cd NekoDroid
+npm install
+wasm-pack build --target web
+npm run dev
+```
+
+Open `http://localhost:5173` in your browser.
+
+## How do I run an APK?
+
+1. Build Wasm and start `npm run dev`
+2. In the UI, click **Load APK** and choose an APK file
+3. Click **Run APK (HLE)**
+4. Check the logcat panel and VRAM mode for output
+
+The success signal for the bundled `testdata/hello.apk` is the log line `Hello from NekoDroid`.
+
+## What opcodes does the Dalvik interpreter support?
+
+It supports a minimal viable set, including `move`, `const/4`, `const/16`, `const-string`, `return`, `goto`, `if-*`, `invoke-*`, `new-instance`, array operations, and integer arithmetic. The full checklist is in `docs/OPCODE_MVP.md` in the repository.
+
+## What happens with unsupported opcodes?
+
+The interpreter logs the unsupported opcode hex value and program counter, sets the VM state to halted, and returns an error. The wrapper functions in the Wasm API swallow the error and return a default value so the UI does not crash.
+
+## What happens with unknown native or framework methods?
+
+If `try_invoke` does not recognize a method, it returns `None` and the interpreter attempts to run DEX code. For stubbed framework methods that are recognized but intentionally empty, the stub returns `0` (as an `Int` Value).
+
+## How does the VRAM text blit work?
+
+When an APK calls stubbed text-drawing hooks, the HLE runtime accumulates text lines. Calling `blit_dalvik_text_to_vram()` copies the accumulated text into the emulator's RGBA framebuffer at `0x04000000` so it appears on the canvas. The text is rendered using procedural glyph placeholders, not a real font. The UI can auto-switch to VRAM render mode when running an APK.
+
+## Can I load custom ARM binaries?
+
+Yes. NekoDroid supports loading raw ARM and Thumb binaries, hex programs, and `.bin` ROM files. You can also paste ARM hex into the Custom Program panel and upload it to RAM at address `0x8000`.
+
+## How much RAM can I allocate?
+
+`init_emulator(0)` allocates the default of 512 MiB. The maximum is 4096 MiB. Values above 1024 MiB log a warning about possible browser OOM.
+
+## Does NekoDroid boot Linux?
+
+It includes a `boot_linux_kernel` helper that sets up ATAGs and machine ID `0x46F` (Goldfish) for kernel boot. Full Linux userspace is experimental.
 
 ## Still have questions?
 
-If your question is not covered here, try checking the <a href="/contributing">Contributing</a> page for development context, or the <a href="/reference/memory-map">Hardware Reference</a> for low-level details about memory layout and peripherals.
+Open an issue on the [GitHub repository](https://github.com/nishal21/NekoDroid), or check [Contributing](/contributing) for development context.

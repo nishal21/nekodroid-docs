@@ -1,161 +1,116 @@
 ---
-title: "Debug ARM Code with the NekoDroid CPU Debugger"
-description: "Single-step ARM instructions, inspect registers and flags, view live disassembly, and upload custom hex or UART demos in the NekoDroid browser debugger."
+title: "Debug ARM Code with the CPU Debugger"
 sidebarTitle: "CPU Debugger"
-keywords:
-  - "NekoDroid debugger"
-  - "ARM CPU step"
-  - "register inspection"
-  - "disassembly emulator"
-  - "custom hex upload"
-  - "Hello UART demo"
+description: "Single-step ARM instructions, inspect registers and flags, view live disassembly, and upload custom hex or compiled binaries in the NekoDroid browser debugger."
 ---
 
-NekoDroid ships with a built-in ARMv7 CPU debugger that runs entirely in the browser. You can step through instructions one at a time, inspect all 16 registers and the condition flags, view a live disassembly stream, and upload your own machine code or pre-built demos. This page covers every control in the debug panel and explains how the placeholder hex program works.
+This page covers every control in the NekoDroid ARMv7 CPU debug panel and explains how to use it.
 
-<Steps>
-  ### Load a demo program
+## Load a Program
 
-  1. Click **Load Demo** (boxed icon) inside the **ARMv7 CPU Debug** panel.
-  2. The emulator writes a 10-instruction test program to RAM at `0x8000` and resets `PC` to the same address.
-  3. The disassembly panel updates immediately and highlights `0x00008000` as the current instruction.
+### Load Demo
 
-  This demo is useful for verifying that the fetch-decode-execute pipeline is alive before you load anything else.
+Click **Load Demo** in the **ARMv7 CPU Debug** panel. The emulator writes a 10-instruction program to RAM at `0x8000`, sets `PC = 0x8000`, and resets the cycle count. The disassembly panel updates immediately.
 
-  ### Run the Hello UART demo
+The demo program executes the following:
 
-  Click the green **Hello UART** button (terminal icon) to load a hand-assembled ARM program that prints text to the virtual serial port.
+| Address | Instruction | Effect |
+| --- | --- | --- |
+| `0x8000` | `MOV R0, #5` | `R0 = 5` |
+| `0x8004` | `MOV R1, #10` | `R1 = 10` |
+| `0x8008` | `ADD R2, R0, R1` | `R2 = 15` |
+| `0x800C` | `SUB R3, R2, #1` | `R3 = 14` |
+| `0x8010` | `CMP R3, #14` | Sets Z flag |
+| `0x8014` | `BEQ` | Branches if equal |
+| `0x8018` | `MOV R4, #1` | Not-taken path |
+| `0x801C` | `B` | Skip to end |
+| `0x8020` | `MOV R4, #0` | Taken path (equal) |
+| `0x8024` | `NOP` | `MOV R0, R0` |
 
-  The program performs the following operations:
+### Hello UART
 
-  | Address  | Instruction           | Effect                                    |
-  | -------- | --------------------- | ----------------------------------------- |
-  | `0x8000` | `MOV R1, #0x10000000` | Load UART TX base address into `R1`       |
-  | `0x8004` | `ADD R2, PC, #0x18`   | Point `R2` to the string at `0x8020`      |
-  | `0x8008` | `LDRB R0, [R2], #1`   | Read next character, post-increment `R2`  |
-  | `0x800C` | `CMP R0, #0`          | Check for null terminator                 |
-  | `0x8010` | `BEQ halt`            | Exit loop if null                         |
-  | `0x8014` | `STRB R0, [R1]`       | Write character to UART TX (`0x10000000`) |
-  | `0x8018` | `B loop`              | Repeat for next byte                      |
-  | `0x801C` | `B .`                 | Infinite loop (halt)                      |
-  | `0x8020` | `"Hello World!\n\0"`  | ASCII payload, padded to 4-byte boundary  |
+Click **Hello UART** to load a hand-assembled program that prints "Hello World!" to the virtual serial port. After loading, press **Step** or **Run** to execute. The console shows the output when the newline byte flushes the buffer.
 
-  After loading, press **Run 10** a few times, or press **Run** to execute continuously. The console log shows `📟 UART: Hello World!` when the newline byte flushes the buffer. The CPU halts at `0x801C` with a `B #+0` self-loop.
+The program uses these instructions:
 
-  ### Step through instructions
+| Address | Instruction | Effect |
+| --- | --- | --- |
+| `0x8000` | `MOV R1, #0x10000000` | UART TX base address |
+| `0x8004` | `ADD R2, PC, #0x18` | Point to string at `0x8020` |
+| `0x8008` | `LDRB R0, [R2], #1` | Read byte, post-increment |
+| `0x800C` | `CMP R0, #0` | Check for null terminator |
+| `0x8010` | `BEQ halt` | Exit loop if null |
+| `0x8014` | `STRB R0, [R1]` | Write byte to UART |
+| `0x8018` | `B loop` | Repeat |
+| `0x801C` | `B .` | Infinite loop (halt) |
+| `0x8020` | `"Hello World!\n\0"` | ASCII payload |
 
-  * **Step** executes exactly one instruction and pauses.
-  * **Run 10** executes up to 10 instructions or until the CPU halts.
-  * **Run** (green play button) enters continuous mode: it runs one million instructions per animation frame until the CPU halts or you press the button again to stop.
+## Step Through Instructions
 
-  During continuous mode the debug panel still updates at 5 Hz (every 200 ms) so you can watch registers change without slowing the batch.
+- **Step** executes exactly one instruction and pauses
+- **Run 10** executes up to 10 instructions or until the CPU halts
+- **Run** enters continuous mode: it runs batches of one million instructions per frame until halted or stopped
 
-  ### Read the register grid
+The debug panel updates live during continuous execution.
 
-  Sixteen cells display `R0` through `R15` in a 4x4 grid. Values are shown as 8-digit uppercase hex. When a register changes, it flashes cyan for 300 ms so you do not miss updates during a burst of execution.
+## Read the Register Grid
 
-  The aliases are:
+Sixteen cells display `R0` through `R15`. Values are shown as 8-digit uppercase hex. Changed registers flash briefly. The aliases are:
 
-  * `R13` = `SP` (stack pointer)
-  * `R14` = `LR` (link register)
-  * `R15` = `PC` (program counter)
+- `R13` = `SP`
+- `R14` = `LR`
+- `R15` = `PC`
 
-  ### Read the flags row
+## Read the Flags Row
 
-  Five pills sit above the disassembly panel:
+Five pills sit above the disassembly panel:
 
-  | Pill        | Meaning                 | Set when                       |
-  | ----------- | ----------------------- | ------------------------------ |
-  | N           | Negative                | Result bit 31 is 1             |
-  | Z           | Zero                    | Result equals zero             |
-  | C           | Carry                   | Unsigned overflow or no borrow |
-  | V           | Overflow                | Signed overflow                |
-  | ARM / THUMB | Current instruction set | `T` bit in CPSR                |
+| Pill | Meaning | Set when |
+| --- | --- | --- |
+| N | Negative | Result bit 31 is 1 |
+| Z | Zero | Result equals zero |
+| C | Carry | Unsigned overflow or no borrow |
+| V | Overflow | Signed overflow |
+| ARM / THUMB | Current instruction set | `T` bit in CPSR |
 
-  A pill turns bright when the corresponding flag is set and stays dim when clear. The `ARM / THUMB` pill shows the current execution state; it switches automatically when the CPU executes a `BX` instruction with an odd target address.
+## Read the Disassembly Panel
 
-  ### Read the disassembly panel
+The disassembler shows the next five instructions starting at `PC`. The first line is highlighted as the current instruction. If an instruction is not recognized, the line shows the raw 32-bit encoding.
 
-  The disassembler shows the next five instructions starting at the current `PC`. The first line is highlighted in cyan and labeled as the current instruction.
+## Upload Custom Hex Programs
 
-  NekoDroid's disassembler covers:
+The **CUSTOM PROGRAM** textarea accepts space-separated ARM machine code hex words. Click **Upload to RAM** to write them at `0x8000` and reset `PC`.
 
-  * Data-processing instructions (`MOV`, `ADD`, `SUB`, `CMP`, `AND`, `ORR`, `EOR`, `BIC`, `MVN`) with barrel-shifter notation
-  * Load/store (`LDR`, `STR`, `LDRB`, `STRB`, `LDRH`, `STRH`) with offset, pre-index, post-index, and writeback
-  * Block transfers (`LDM`, `STM`, `PUSH`, `POP`)
-  * Branches (`B`, `BL`, `BX`, `BLX`)
-  * Multiply (`MUL`, `MLA`)
-  * Software interrupt (`SWI`)
+### Placeholder Program
 
-  If an instruction is not recognized, the line shows `UNIMPLEMENTED` and the 32-bit hex encoding.
-</Steps>
-
-## Upload custom hex programs
-
-The **CUSTOM PROGRAM** textarea accepts space-separated ARM machine-code hex words. Click **Upload to RAM** to write them starting at `0x8000` and reset `PC`.
-
-### Understanding the placeholder program
-
-The placeholder text in the textarea is:
-
-```text
-e3a00005 e3a0100a e0802001
-```
-
-Each word is a little-endian 32-bit ARM instruction. Here is the breakdown:
+The default placeholder text is `e3a00005 e3a0100a e0802001`. Here is the breakdown:
 
 | Hex | Disassembly | Meaning |
 | --- | --- | --- |
-| `e3a00005` | `MOV R0, #5` | Move immediate value `5` into register `R0` |
-| `e3a0100a` | `MOV R1, #10` | Move immediate value `10` into register `R1` |
-| `e0802001` | `ADD R2, R0, R1` | Add `R0` and `R1`, store the result (`15`) in `R2` |
+| `e3a00005` | `MOV R0, #5` | Move `5` into `R0` |
+| `e3a0100a` | `MOV R1, #10` | Move `10` into `R1` |
+| `e0802001` | `ADD R2, R0, R1` | Add `R0` and `R1`, store `15` in `R2` |
 
-After uploading and stepping three times, the register grid should read:
+After uploading and stepping three times, `R0 = 5`, `R1 = 10`, and `R2 = 15`.
 
-- `R0` = `00000005`
-- `R1` = `0000000A`
-- `R2` = `0000000F`
+All tokens must be exactly 8 hex characters. The parser accepts spaces and newlines.
 
-This is the same program used in the Rust unit test `test_basic_alu`.
+## Boot State
 
-### Tips for writing hex
-
-<Note>
-  All instructions must be 32-bit ARM machine code. Thumb (`T` = `1`) and data words are not accepted by the hex parser.
-</Note>
-
-<Tip>
-  Use the disassembly panel to verify your upload. If a line does not decode the way you expect, double-check the endianness: NekoDroid stores instructions in little-endian byte order inside RAM, but the hex parser expects the natural word order you would see in an objdump listing.
-</Tip>
-
-<Warning>
-  The hex parser is strict about whitespace and length. Each token must be exactly 8 hex characters. If you paste with newlines, make sure there are no extra spaces at the end.
-</Warning>
-
-## Boot-time state
-
-When the emulator initializes with `init_emulator(0)` (512 MB default), the CPU boots with:
+When the emulator initializes, the CPU boots with:
 
 | Register | Initial value |
 | --- | --- |
 | PC | `0x00008000` |
-| SP | RAM size minus `0x10000` (0x1FFF0000 for 512 MB) |
+| SP | RAM size minus `0x10000` |
 | All others | `0x00000000` |
 
-If you upload a `.bin` file with **Select & Load .bin**, the ROM loader copies the binary to `0x8000` and sets `PC` to the same address. Custom hex uploads behave identically.
+Calling `init_emulator(0)` selects the 512 MB default. The maximum is 4096 MB. SP is always set to `RAM size - 0x10000`.
 
-## Next steps
+If you upload a `.bin` file, the ROM loader copies the binary to `0x8000` and sets `PC` there.
 
-<CardGroup>
-  <Card title="Bare-Metal Programs" icon="code" href="/guides/bare-metal-programs">
-    Move from hand-assembled hex to C programs with `start.S`, `link.ld`, and `arm-none-eabi-gcc`.
-  </Card>
+## Next Steps
 
-  <Card title="Web Interface" icon="monitor" href="/guides/web-interface">
-    Learn about render modes, input mapping, and the metrics panel.
-  </Card>
-
-  <Card title="Boot Linux" icon="linux" href="/guides/boot-linux">
-    Upload a zImage and initrd to watch real kernel decompression and early boot.
-  </Card>
-</CardGroup>
+- [Bare-Metal Programs](/guides/bare-metal-programs): Move from hand-assembled hex to C with a linker script
+- [Web Interface](/guides/web-interface): Explore render modes and input mapping
+- [Boot Linux](/guides/boot-linux): Load a kernel and initrd

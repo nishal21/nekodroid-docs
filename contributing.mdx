@@ -1,116 +1,45 @@
 ---
-title: "Contribute to NekoDroid Development"
-description: "Learn how to contribute to NekoDroid, including setup, required checks, safe git staging rules, DEVLOG conventions, and reference documentation."
+title: "Contribute to NekoDroid: Issues, PRs, and License"
 sidebarTitle: "Contributing"
-keywords:
-  - "contributing"
-  - "PR"
-  - "DEVLOG"
-  - "checks"
-  - "staging"
-  - "git"
-  - "Rust"
-  - "Wasm"
+description: "How to contribute to NekoDroid. Report issues, open small verified pull requests, follow the MIT license, and read setup and check instructions on the Development page."
 ---
 
-NekoDroid welcomes contributions. Before opening a pull request, follow the checks, staging rules, and conventions documented here. All changes to the emulator core or HLE path should be grounded in tests and the existing source style.
+This page covers how to contribute to NekoDroid, what kinds of changes the project accepts, and where to find detailed development instructions.
 
-<Note>
-  All work happens at the repo root (`src/`, `public/`). Do not publish a nested `browser-droid/` folder or local working copies.
-</Note>
+## Reporting issues
 
-## Setup
+If you find a bug or have a question, open an issue on the [GitHub repository](https://github.com/nishal21/NekoDroid). When reporting a bug, include:
 
-You need Rust stable with the `wasm32-unknown-unknown` target, `wasm-pack`, and Node.js installed.
+- The browser and version you are using
+- The steps that trigger the issue
+- Expected behavior and actual behavior
+- Any relevant log output from the browser console or the logcat panel
 
-<Tabs>
-  <Tab title="Clone and install">
-    ```bash
-    git clone https://github.com/nishal21/NekoDroid.git
-    cd NekoDroid
-    npm install
-    ```
-  </Tab>
-  <Tab title="Build Wasm">
-    ```bash
-    wasm-pack build --target web
-    ```
-  </Tab>
-  <Tab title="Start dev server">
-    ```bash
-    npm run dev
-    ```
+## Pull requests
 
-    Open `http://localhost:5173` in your browser.
-  </Tab>
-</Tabs>
+The project welcomes small, focused pull requests that change behavior for the constrained HLE Dalvik runner. Before opening a PR:
 
-## Checks before a PR
+1. Verify your change against actual source behavior, not just documentation claims
+2. Keep changes scoped to one concern per PR
+3. Do not modify tracked demo binaries unless you are deliberately changing them
+4. Do not stage local working copies, build artifacts, or journals
 
-Every change must pass these three commands before it can be merged.
+## What never belongs in a commit
 
-<Steps>
-  <Step title="Run Rust unit tests">
-    ```bash
-    cargo test --lib
-    ```
+Do not run `git add .` or `git add -A`. Stage only files you intend to change.
 
-    The suite includes 116+ tests covering memory read/write, UART MMIO, CPU fetch-decode-execute, ALU operations, branch logic, barrel shifter, load/store, block transfer, SWI exceptions, Thumb instructions, and HLE Dalvik stubs.
-  </Step>
-  <Step title="Build Wasm">
-    ```bash
-    npm run build:wasm
-    ```
+Never commit these directories or files:
 
-    This runs `wasm-pack build --target web` and must complete without errors.
-  </Step>
-  <Step title="Full production build">
-    ```bash
-    npm run build
-    ```
+| Path | Reason |
+| --- | --- |
+| `browser-droid/` | Local nested working copy |
+| `pkg/`, `target/`, `node_modules/`, `dist/` | Build artifacts |
+| `test-images/` | Local test images |
+| `*.zImage`, `*.img`, `*.cpio.gz` | Kernel images |
+| `learning-journal.md`, `handoff-devlog.md` | Personal notes |
+| `.cursor/`, `.env*` | Editor or environment files |
 
-    This builds Wasm, compiles TypeScript, and runs Vite production bundling. It must complete cleanly.
-  </Step>
-</Steps>
-
-## Safe staging rules
-
-Do not run `git add .` or `git add -A`. Those commands pull in local junk that should never be committed.
-
-<Warning>
-  Never stage these directories or files:
-
-  - `browser-droid/` (local nested working copy)
-  - `pkg/`, `target/`, `node_modules/`, `dist/`
-  - `test-images/`, `*.zImage`, `*.img`, `*.cpio.gz`
-  - `learning-journal.md`, `handoff-devlog.md`, `.cursor/`, `.env*`
-  - Accidental CRLF-only edits to files you did not intend to change
-</Warning>
-
-### Recommended safe staging command
-
-For APK HLE and core emulator work, stage only the allowlisted paths:
-
-```powershell
-git add -- `
-  .gitignore .gitattributes `
-  Cargo.toml Cargo.lock `
-  package.json package-lock.json `
-  README.md LICENSE CONTRIBUTING.md DEVLOG.md rust-toolchain.toml `
-  .github/workflows/ci.yml `
-  docs/ examples/hello-apk/ public/_headers `
-  src/android/ `
-  src/lib.rs src/main.ts src/cp15.rs src/cpu.rs src/cpu/tests.rs `
-  src/memory.rs src/memory/tests.rs `
-  testdata/
-git add -u -- src/counter.ts src/typescript.svg
-```
-
-After staging, run `git status` and confirm that `browser-droid/`, `pkg/`, journals, and demo binaries are not listed.
-
-### Leave demo binaries alone
-
-Do not modify existing demo binaries unless you are deliberately changing them:
+Demo binaries that should not be modified unless deliberate:
 
 - `snake.*`
 - `theremin.*`
@@ -118,59 +47,24 @@ Do not modify existing demo binaries unless you are deliberately changing them:
 - `input_test.*`
 - `program.*`
 
-## DEVLOG conventions
+## Documentation to keep in sync
 
-Track significant work sessions in `DEVLOG.md` at the repo root. Each session should record:
-
-- Date and role
-- What was built or changed
-- Key design decisions and trade-offs
-- Bugs found and how they were fixed
-- Verification (test counts, pass/fail status)
-- Next steps
-
-<Note>
-  Update `DEVLOG.md` when you finish a real session of work, not after every small change. A session typically spans a coherent feature or bug fix.
-</Note>
-
-## Reference documentation
-
-The `docs/` directory contains reference material that contributors should keep up to date when changing related code:
+If you change the HLE path or Dalvik interpreter, update the matching files in `docs/`:
 
 | File | Purpose |
 | --- | --- |
-| `docs/SUPPORTED_APKS.md` | Which APKs the HLE path can run and why |
+| `docs/SUPPORTED_APKS.md` | Which APKs the HLE path can run |
 | `docs/OPCODE_MVP.md` | Checklist of implemented Dalvik opcodes |
 | `docs/REFERENCES.md` | External specs: DEX format, Dalvik bytecode, ART interpreter, smali |
-| `docs/GOLDFISH_SMOKE.md` | Goldfish kernel boot testing notes |
 
-## Project scope
+## Scope
 
-NekoDroid's APK path is a constrained HLE Dalvik runner, not full Android or ART. Prefer small test APKs without native libraries. If you want to extend the Dalvik interpreter, add the opcode to both `src/android/interp.rs` and `docs/OPCODE_MVP.md`, and include a unit test.
+NekoDroid is a constrained HLE Dalvik runner, not a full Android or ART emulator. Prefer small test APKs without native libraries.
 
-<CardGroup cols={2}>
-  <Card title="Supported APKs" icon="check" href="/android/supported-apks">
-    Review APK compatibility requirements before writing new HLE tests.
-  </Card>
+## License
 
-  <Card title="Build Test APK" icon="wrench" href="/android/build-test-apk">
-    Learn how to generate fixtures and custom smali-based APKs.
-  </Card>
-</CardGroup>
+NekoDroid is released under the MIT License. See the `LICENSE` file in the repository.
 
-## Key references and specs
+## Development setup
 
-When working on the HLE path, these external documents are the authoritative references:
-
-- [DEX file format](https://source.android.com/docs/core/runtime/dex-format)
-- [Dalvik bytecode](https://source.android.com/docs/core/runtime/dalvik-bytecode)
-- [Instruction formats](https://source.android.com/docs/core/runtime/instruction-formats)
-- [Opcodes](https://developer.android.com/reference/dalvik/bytecode/Opcodes)
-- [smali / baksmali](https://github.com/JesusFreke/smali)
-
-## Commit hygiene
-
-- Do not commit or push from an automated agent. The user owns remotes.
-- Squash work-in-progress commits into logical, well-described commits.
-- Include test counts in your DEVLOG entry for that session.
-- If you add a new opcode, update `docs/OPCODE_MVP.md` in the same commit.
+For full setup instructions, build commands, and checks before a PR, see [Development](/development).

@@ -1,22 +1,20 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "aspen",
+  "theme": "maple",
   "name": "NekoDroid",
   "colors": {
-    "primary": "#7C3AED",
-    "light": "#A78BFA",
-    "dark": "#6D28D9"
+    "primary": "#7c83ff",
+    "light": "#9aa0ff",
+    "dark": "#5b61d6"
   },
-  "favicon": "/images/nekodroid-favicon.svg",
+  "favicon": "/logo/favicon.svg",
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
-        "icon": "book-open",
+        "tab": "Guides",
         "groups": [
           {
-            "group": "Start Here",
-            "icon": "rocket",
+            "group": "Getting Started",
             "pages": [
               "index",
               "quickstart",
@@ -25,8 +23,7 @@
             ]
           },
           {
-            "group": "Explore & Build",
-            "icon": "microchip",
+            "group": "ARM Emulation",
             "pages": [
               "guides/web-interface",
               "guides/cpu-debugger",
@@ -35,124 +32,93 @@
             ]
           },
           {
-            "group": "Android HLE",
-            "icon": "mobile-screen",
+            "group": "APK Runtime",
             "pages": [
               "android/run-apk",
               "android/supported-apks",
-              "android/build-test-apk"
-            ]
-          },
-          {
-            "group": "Project & Help",
-            "icon": "circle-question",
-            "pages": [
-              "faq",
-              "contributing"
-            ]
-          },
-          {
-            "group": "Images",
-            "pages": [
-              "images/build-pipeline.svg",
-              "images/nekodroid-execution-paths.svg"
+              "android/build-test-apk",
+              "faq"
             ]
           }
         ]
       },
       {
         "tab": "Reference",
-        "icon": "code",
-        "groups": [
-          {
-            "group": "Machine Reference",
-            "icon": "memory",
-            "pages": [
-              "reference/memory-map",
-              "reference/peripherals",
-              "reference/dalvik-opcodes"
-            ]
-          },
-          {
-            "group": "API & Examples",
-            "icon": "terminal",
-            "pages": [
-              "reference/wasm-api",
-              "reference/demo-programs"
-            ]
-          }
+        "pages": [
+          "reference/memory-map",
+          "reference/peripherals",
+          "reference/dalvik-opcodes",
+          "reference/demo-programs"
+        ]
+      },
+      {
+        "tab": "API",
+        "pages": [
+          "reference/wasm-api"
+        ]
+      },
+      {
+        "tab": "Contributing",
+        "pages": [
+          "contributing",
+          "development"
         ]
       }
     ]
   },
   "logo": {
-    "light": "/images/nekodroid-logo-light.svg",
-    "dark": "/images/nekodroid-logo-dark.svg"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [
       {
+        "href": "https://github.com/nishal21/NekoDroid",
+        "label": "Source"
+      },
+      {
         "href": "https://github.com/nishal21/NekoDroid/issues",
-        "label": "Report an Issue"
+        "label": "Issues"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "View Source",
-      "href": "https://github.com/nishal21/NekoDroid"
-    }
+    ]
   },
   "contextual": {
     "options": [
       "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
+      "view"
     ]
   },
   "footer": {
-    "socials": {
-      "github": "https://github.com/nishal21/NekoDroid"
-    },
     "links": [
       {
-        "header": "NekoDroid",
+        "header": "Project",
         "items": [
           {
-            "label": "Source Code",
+            "label": "Source",
             "href": "https://github.com/nishal21/NekoDroid"
           },
           {
-            "label": "Report an Issue",
+            "label": "Issues",
             "href": "https://github.com/nishal21/NekoDroid/issues"
           }
         ]
       },
       {
-        "header": "Docs Powered By",
+        "header": "Documentation",
         "items": [
           {
-            "label": "Mintlify",
+            "label": "Provided by Mintlify",
             "href": "https://mintlify.com"
-          },
-          {
-            "label": "Mintlify Documentation",
-            "href": "https://mintlify.com/docs"
           }
         ]
       }
     ]
   },
-  "description": "Explore NekoDroid, a Rust and WebAssembly ARM emulator with CPU debugging, bare-metal programs, Linux boot experiments, and constrained APK HLE.",
+  "description": "Documentation for NekoDroid, a Rust and WebAssembly ARM emulator with a separate, constrained Dalvik HLE runtime for small APK fixtures.",
   "background": {
-    "decoration": "grid",
     "color": {
-      "light": "#FAF9FE",
-      "dark": "#0E0C18"
+      "light": "#fafafa",
+      "dark": "#0c0c0d"
     }
   },
   "seo": {
@@ -160,8 +126,7 @@
       "og:site_name": "NekoDroid",
       "og:locale": "en_US",
       "author": "nishal21",
-      "theme-color": "#7C3AED",
-      "keywords": "NekoDroid, ARM emulator, Rust, WebAssembly, Dalvik HLE, APK browser emulator"
+      "theme-color": "#0c0c0d"
     },
     "indexing": "navigable"
   },
@@ -171,5 +136,9 @@
   },
   "fonts": {
     "family": "Inter"
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": false
   }
 }

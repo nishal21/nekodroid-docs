@@ -1,73 +1,56 @@
 ---
-title: "How NekoDroid Works: Browser-to-ARM Architecture"
-sidebarTitle: "Architecture"
-description: "NekoDroid runs in the browser via WebAssembly with two independent execution paths: a bare-metal ARMv7 CPU emulator and a Dalvik HLE interpreter for APKs."
+title: "How NekoDroid Runs ARM Programs and APKs in a Browser"
+sidebarTitle: "How It Works"
+description: "Understand NekoDroid's WebAssembly bridge, separate ARM and Dalvik execution paths, framebuffer output, and the limits of its APK runtime."
+keywords:
+  - "NekoDroid architecture"
+  - "ARM WebAssembly"
+  - "Dalvik interpreter"
 ---
 
-NekoDroid is a Rust emulator compiled to WebAssembly that runs entirely in your browser. It exposes two independent execution paths through a single wasm-bindgen bridge: a bare-metal ARM CPU emulator for machine code, and a high-level Dalvik interpreter for APKs. This page explains how both paths work, what they share, and where they diverge.
+NekoDroid uses one Rust WebAssembly module with two separate runtimes: an ARM emulator for machine code and a Dalvik HLE interpreter for APK bytecode. This page explains their inputs, output, and limitations.
 
-<Frame caption="Conceptual diagram: Browser UI connects to wasm-bindgen, which branches to two independent lanes. The ARM lane runs ARMv7 and Thumb code against RAM and MMIO peripherals. The APK lane parses DEX bytecode and runs it through a minimal Dalvik interpreter with stubbed framework calls.">
-  <img
-    src="/images/runtime-map.svg"
-    alt="NekoDroid execution paths diagram showing Browser UI feeding into wasm-bindgen, which fans out to two independent lanes: an ARM CPU lane with RAM, MMIO, and VRAM, and an APK HLE lane with ZIP extraction, classes.dex, Dalvik interpreter, and framework stubs"
-  />
-</Frame>
+## Execution Paths
 
-## Shared bridge
+```mermaid
+flowchart TB
+  ARMFile["ARM hex or flat binary"] --> ARM
+  APK["APK"] --> DEX["classes.dex"] --> Dalvik
+  subgraph WASM["Rust compiled to WebAssembly"]
+    ARM["ARM / Thumb CPU"] --> VRAM["RAM, MMIO, and framebuffer"]
+    Dalvik["Dalvik HLE interpreter"] --> HLE["Framework stubs and logs"]
+    HLE -. "optional placeholder glyphs" .-> VRAM
+  end
+  VRAM --> Browser["Browser interface"]
+  HLE --> Browser
+```
 
-Both paths live inside the same WebAssembly module and linear memory, but they never call into each other. The TypeScript frontend communicates with Rust through wasm-bindgen exports such as `init_emulator`, `run_batch`, `load_apk`, and `run_dalvik_batch`. The frontend also reads MMIO state directly from Wasm memory to update the canvas, audio oscillator, and input registers. This keeps JavaScript boundary overhead low while letting the emulator run large instruction batches inside a single Wasm call.
+APK bytecode does **not** pass through the ARM CPU. Both runtimes are controlled through JavaScript exports from the same WebAssembly module.
 
-The CPU state, including all registers and flags, persists across calls in a thread-local instance. You can single-step one instruction, run a batch of thousands, and inspect the result without reloading the program. Batching inside Wasm avoids the cost of crossing the JavaScript boundary on every instruction, which is why NekoDroid can run interactive demos at reasonable frame rates.
+## ARM Emulation
 
-## Two independent runtimes
+Load ARM hex or a flat binary at `0x8000`, then single-step or run an instruction batch. The CPU maintains registers and memory between calls. Memory-mapped peripherals provide framebuffer, keyboard, touch, audio, and UART behavior.
 
-When you press Run or load an APK in the web interface, the Vite + TypeScript frontend calls into Rust. From there, work fans out into two separate paths.
+The framebuffer is 800 × 600 RGBA. `init_emulator(0)` selects 512 MiB of RAM; a nonzero argument requests a size in MiB, capped at 4096. Large allocations can exceed a browser's available memory.
 
-<CardGroup cols={2}>
-  <Card title="ARM + Thumb CPU">
-    The ARM path runs ARMv7 and Thumb machine code through a fetch, decode, and execute loop. RAM defaults to 512 MB when you call `init_emulator(0)`. The MMU intercepts MMIO addresses for virtual peripherals such as UART, timer, VIC, audio, input, and RTC. Writes to the VRAM base at `0x04000000` render to an 800x600 RGBA canvas.
+The system timer advances at instruction intervals inside `run_batch`, not at a fixed wall-clock rate. See the [memory map](/reference/memory-map) and [peripherals](/reference/peripherals) before writing guest programs.
 
-    Inside `run_batch(count, timer_interval)`, the system timer advances every `timer_interval` instructions. This is a cycle-based tick tied to the instruction batch, not a guaranteed 60 Hz wall-clock timer.
-  </Card>
+## APK Emulation
 
-  <Card title="APK Dalvik HLE">
-    The APK path bypasses the ARM CPU entirely. `load_apk()` unzips the APK and parses `classes.dex`, then the minimal Dalvik interpreter executes opcodes via `run_dalvik_batch(count)`. The DEX parser reads the header, string pool, type list, method list, and class data before execution begins.
+The APK loader extracts `classes.dex` and creates a separate Dalvik session. The interpreter executes a supported subset of opcodes and intercepts selected framework calls, including logging and basic text hooks.
 
-    This is high-level emulation, not the Android Runtime (ART) or a full AOSP stack. Framework calls such as `android.util.Log` and `java.lang.System.out.println` are intercepted and handled natively in Rust. Simple `TextView` and `Activity` hooks are stubbed so basic layout code does not crash. If the interpreter encounters an unknown native or framework method, it returns 0 and continues. Only single-DEX APKs without JNI are supported.
-  </Card>
-</CardGroup>
+This is high-level emulation, not ART or a full Android OS. Unknown native or framework methods return an integer zero. Unsupported opcodes halt execution. The runtime does not load extra DEX files or JNI libraries.
 
-## Quick comparison
+Logs are readable in the interface. The optional VRAM blit draws placeholder glyph patterns, not a complete Android UI or readable text font. Start with the [Hello APK](/android/run-apk) and review [compatibility limits](/android/supported-apks).
 
-| What you want to run | Execution path | Key entry points |
-| --- | --- | --- |
-| Compiled ARM binary (ELF or raw) | ARM + Thumb CPU | `load_rom()`, `run_batch(count, timer_interval)` |
-| APK with `classes.dex` | Dalvik HLE | `load_apk()`, `run_dalvik_batch(count)` |
-| Linux kernel zImage | ARM + Thumb CPU | `boot_linux_kernel(zImage, initrd)` |
+## JavaScript Bridge
 
-<Note>
-  NekoDroid does not run APKs through the ARM CPU, and it does not boot a full Android OS. The Linux kernel boot path is experimental and parses the zImage header, sets ATAGs, and jumps to the start address so the kernel can use the same MMIO peripherals.
-</Note>
+The browser calls exports such as `init_emulator`, `run_batch`, `load_apk`, and `run_dalvik_batch`. It reads framebuffer bytes through WebAssembly memory and renders them to a canvas.
 
-## Key facts
+The [JavaScript API](/reference/wasm-api) documents the exports and their return values. Its ARM and APK examples use separate initialization flows.
 
-- **RAM default:** `init_emulator(0)` allocates 512 MB. Larger values are soft-capped at 1024 MB in browser-friendly mode.
-- **Timer behavior:** The system timer advances every `timer_interval` instructions inside `run_batch`, not on a fixed 60 Hz schedule.
-- **HLE fallback:** Unknown framework or native methods return `0` without stopping the interpreter.
-- **Opcode limitation:** Unsupported Dalvik opcodes halt the VM.
+## Experimental Kernel Boot
 
-## Next steps
+Linux and Android kernel helpers prepare the ARM CPU's boot state. They do not turn the Dalvik HLE path into a full Android system, and loading a system image does not make additional framework APIs available to HLE APKs.
 
-<CardGroup cols={3}>
-  <Card title="CPU Debugger" icon="bug" href="/guides/cpu-debugger">
-    Step through ARM and Thumb instructions with the live debug panel.
-  </Card>
-
-  <Card title="Bare-Metal Programs" icon="microchip" href="/guides/bare-metal-programs">
-    Write and run ARM assembly that talks directly to MMIO peripherals.
-  </Card>
-
-  <Card title="Run an APK" icon="android" href="/android/run-apk">
-    Load a test APK and see how the Dalvik HLE lane handles it.
-  </Card>
-</CardGroup>
+Use the [kernel boot guide](/guides/boot-linux) for experiments, not as a guarantee of a completed Linux or Android boot.
