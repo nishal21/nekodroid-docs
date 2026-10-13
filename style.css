@@ -143,3 +143,4 @@ html:is([data-current-path="/"], [data-current-path="/index"]) #header { display
 
 .nd-hero-title { color: #0f0f10; }
 .dark .nd-hero-title { color: #fafafa; }
+html.nd-intro-active, html.nd-intro-active body { overflow: hidden !important; }
