@@ -67,7 +67,6 @@ img.nav-logo {
   outline-offset: 3px;
 }
 
-/* Intro controls must never pick up a theme focus ring */
 #nd-intro-cta,
 #nd-intro-skip,
 #nd-intro-cta:focus,
@@ -83,7 +82,7 @@ html.nd-intro-active body {
   overflow: hidden !important;
 }
 
-/* ---- Cards ---- */
+/* ---- Cards + icons ---- */
 .card {
   border-radius: var(--nd-radius) !important;
   border-color: var(--nd-border) !important;
@@ -99,7 +98,7 @@ html.nd-intro-active body {
 }
 
 .card [data-component-part="card-content-container"] {
-  padding: 1.25rem 1.35rem;
+  padding: 1.05rem 1.15rem;
 }
 
 .card [data-component-part="card-title"] {
@@ -112,33 +111,67 @@ html.nd-intro-active body {
   color: var(--nd-muted);
 }
 
-.card [data-component-part="card-icon"] {
+/* Keep Font Awesome / Lucide icons visible — never paint over glyphs */
+.card [data-component-part="card-icon"],
+.icon,
+[data-component-part="card-icon"] {
   color: var(--nd-fg) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
-.card [data-component-part="card-icon"] svg {
+.card [data-component-part="card-icon"] svg,
+.card [data-component-part="card-icon"] i,
+.icon svg {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+  min-width: 1.15rem;
+  min-height: 1.15rem;
+  background: transparent !important;
   background-color: transparent !important;
+  opacity: 1 !important;
+  color: inherit !important;
+  fill: currentColor;
+  stroke: currentColor;
 }
 
-/* ---- Hub homepage (Linear-inspired) ---- */
+/* ---- Dense hub homepage ---- */
 html:is([data-current-path="/"], [data-current-path="/index"]) #header {
   display: none;
 }
 
+html:is([data-current-path="/"], [data-current-path="/index"]) #content-area .mdx-content {
+  max-width: none;
+}
+
 .nd-hub {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem 5rem;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0;
+  padding: 1.15rem 0 2.75rem;
+}
+
+.nd-hub-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.8fr);
+  gap: 1rem 1.35rem;
+  align-items: start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--nd-border);
 }
 
 .nd-hub-hero {
-  max-width: 40rem;
-  margin-bottom: clamp(2.5rem, 5vw, 3.75rem);
+  max-width: none;
+  margin: 0;
 }
 
 .nd-kicker {
-  margin: 0 0 0.85rem !important;
-  font-size: 0.8125rem;
+  margin: 0 0 0.35rem !important;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -148,41 +181,78 @@ html:is([data-current-path="/"], [data-current-path="/index"]) #header {
 .nd-hub-title {
   margin: 0 !important;
   font-family: "Space Grotesk", "IBM Plex Sans", sans-serif !important;
-  font-size: clamp(2.5rem, 6vw, 3.75rem) !important;
+  font-size: clamp(1.85rem, 3vw, 2.4rem) !important;
   font-weight: 650 !important;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
   color: var(--nd-fg);
-  text-wrap: balance;
 }
 
 .nd-hub-lede {
-  margin: 1rem 0 1.75rem !important;
-  max-width: 36rem;
-  font-size: 1.0625rem;
-  line-height: 1.65;
+  margin: 0.55rem 0 0.9rem !important;
+  max-width: 40rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
   color: var(--nd-muted);
-  text-wrap: pretty;
 }
 
 .nd-hub-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.5rem;
+}
+
+.nd-hub-aside {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.nd-aside-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--nd-border);
+  border-radius: 10px;
+  background: var(--nd-surface);
+  text-decoration: none !important;
+  color: inherit !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.nd-aside-link:hover {
+  background: var(--nd-surface-hover);
+  border-color: color-mix(in srgb, var(--nd-fg) 28%, transparent);
+}
+
+.nd-aside-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--nd-muted);
+}
+
+.nd-aside-text {
+  font-size: 0.875rem;
+  font-weight: 550;
+  letter-spacing: -0.015em;
+  color: var(--nd-fg);
 }
 
 .nd-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.5rem;
-  padding: 0 1.05rem;
+  height: 2.2rem;
+  padding: 0 0.95rem;
   border-radius: 999px;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
   text-decoration: none !important;
   border: 1px solid transparent !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .nd-btn-primary {
@@ -205,29 +275,34 @@ html:is([data-current-path="/"], [data-current-path="/index"]) #header {
 }
 
 .nd-hub-section {
-  margin-top: clamp(2.25rem, 4vw, 3.25rem);
+  margin-top: 1.35rem;
 }
 
 .nd-hub-section-title {
-  margin: 0 0 1rem !important;
-  font-size: 0.9375rem !important;
+  margin: 0 0 0.65rem !important;
+  font-size: 0.875rem !important;
   font-weight: 600 !important;
   letter-spacing: -0.01em;
   color: var(--nd-fg);
 }
 
-.nd-hub-steps .steps,
-.nd-hub-steps [class*="steps"] {
-  margin-top: 0.5rem;
+.nd-hub .card [data-component-part="card-content-container"] {
+  padding: 0.9rem 1rem;
+}
+
+@media (max-width: 900px) {
+  .nd-hub-top {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
   .nd-hub {
-    padding-inline: 1.15rem;
+    padding-top: 0.65rem;
   }
 
-  .card [data-component-part="card-content-container"] {
-    padding: 1.1rem 1.15rem;
+  .nd-hub-aside {
+    grid-template-columns: 1fr;
   }
 }
 
