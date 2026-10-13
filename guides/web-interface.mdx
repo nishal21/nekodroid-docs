@@ -6,7 +6,12 @@ description: "Tour the NekoDroid browser UI: canvas modes, live metrics, console
 
 NekoDroid exposes the full emulator through a Vite + TypeScript web UI served at `http://localhost:5173`. This page walks through each panel and control so you know where every feature lives and how to interact with running programs.
 
-![NekoDroid execution paths showing user input flowing through the browser into WebAssembly, then to the ARM CPU, MMU, and back to the canvas](/images/nekodroid-execution-paths.svg)
+<Frame caption="Conceptual runtime map, not a screenshot of the interface.">
+  <img
+    src="/images/runtime-map.svg"
+    alt="Browser controls call two separate WebAssembly runtimes: ARM and Thumb CPU emulation, and APK Dalvik HLE."
+  />
+</Frame>
 
 ## Status Bar
 
@@ -150,11 +155,11 @@ Waveform values map to Web Audio oscillator types: `0` = square, `1` = sine, `2`
 ## Upload Limits
 
 <Note>
-  The soft upload cap is 32 MiB (`MAX_UPLOAD_BYTES`). This limit applies only to APK uploads via the file picker. Kernel images, initramfs files, and bare-metal binaries are loaded through separate paths and are not subject to this cap.
+  APK uploads have a 32 MiB cap, enforced by the file picker and Rust APK loader. Kernel images, initramfs files, and bare-metal binaries use separate loading paths; this APK cap does not apply to them.
 </Note>
 
 <Warning>
-  Large RAM allocations above 1024 MiB (set through `init_emulator`) can cause browser tab OOM on some machines. The default is 512 MiB.
+  Large RAM allocations can exceed the browser's available memory. Calling `init_emulator(0)` selects 512 MB; choose a smaller allocation through the API if your device cannot accommodate it.
 </Warning>
 
 ## Next Steps
@@ -169,7 +174,7 @@ Waveform values map to Web Audio oscillator types: `0` = square, `1` = sine, `2`
   </Card>
 
   <Card title="Boot Linux" icon="linux" href="/guides/boot-linux">
-    Upload a zImage and initrd, then watch the kernel decompress and boot.
+    Try the experimental kernel-loading path with a zImage and optional initrd.
   </Card>
 
   <Card title="Run APKs" icon="android" href="/android/run-apk">
