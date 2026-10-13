@@ -3,9 +3,9 @@
   "theme": "willow",
   "name": "NekoDroid",
   "colors": {
-    "primary": "#F4F4F5",
-    "light": "#FAFAFA",
-    "dark": "#E4E4E7"
+    "primary": "#1F2328",
+    "light": "#F0F0F2",
+    "dark": "#1F2328"
   },
   "favicon": "/logo/favicon.svg",
   "navigation": {
