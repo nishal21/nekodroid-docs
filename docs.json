@@ -3,9 +3,9 @@
   "theme": "willow",
   "name": "NekoDroid",
   "colors": {
-    "primary": "#E8EAED",
-    "light": "#E8EAED",
-    "dark": "#111113"
+    "primary": "#3DDC84",
+    "light": "#3DDC84",
+    "dark": "#1F9D55"
   },
   "favicon": "/logo/favicon.svg",
   "navigation": {
@@ -125,8 +125,8 @@
   "description": "Run ARM programs and small Android APKs in the browser. Rust to WebAssembly, local execution, no cloud runtime.",
   "background": {
     "color": {
-      "light": "#FAFAFA",
-      "dark": "#09090B"
+      "light": "#F7F7F5",
+      "dark": "#0B0C0F"
     },
     "decoration": "grid"
   },
