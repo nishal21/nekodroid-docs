@@ -7,28 +7,43 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
 ---
 
 <div className="nd-doc">
-  <div className="nd-doc-hero">
-    <img
-      className="nd-doc-mascot"
-      src="/logo/favicon.svg"
-      alt=""
-      width="96"
-      height="96"
-    />
-
-    <h1 className="nd-doc-title">NekoDroid</h1>
-    <p className="nd-doc-lede">
-      Run ARM programs and small Android APKs in your browser. Made with Rust and WebAssembly.
-    </p>
-
-    <div className="nd-doc-actions">
-      <a href="/quickstart" className="nd-doc-btn nd-doc-btn-primary">
-        Get started <span aria-hidden="true">→</span>
-      </a>
-      <a href="https://github.com/nishal21/NekoDroid" className="nd-doc-btn nd-doc-btn-secondary">
-        View on GitHub
-      </a>
+  {/* Liquid Glass only on mascot shell + GitHub button — not on cards */}
+  <div id="nd-glass-root" className="nd-glass-hero">
+    <div className="nd-scene" aria-hidden="true">
+      <div className="nd-scene-glow" />
     </div>
+
+    <div
+      className="glass nd-mascot-shell"
+      data-config='{"bevelMode":1,"cornerRadius":52,"zRadius":52,"blurAmount":0.12,"refraction":1.05,"chromAberration":0.04,"edgeHighlight":0.14,"shadowOpacity":0.22,"brightness":0.02}'
+    >
+      <img
+        className="nd-doc-mascot"
+        src="/logo/favicon.svg"
+        alt=""
+        width="72"
+        height="72"
+      />
+    </div>
+
+    <div className="nd-hero-copy">
+      <h1 className="nd-doc-title">NekoDroid</h1>
+      <p className="nd-doc-lede">
+        Run ARM programs and small Android APKs in your browser. Made with Rust and WebAssembly.
+      </p>
+    </div>
+
+    <a href="/quickstart" className="nd-doc-btn nd-doc-btn-primary">
+      Get started <span aria-hidden="true">→</span>
+    </a>
+
+    <a
+      href="https://github.com/nishal21/NekoDroid"
+      className="glass nd-doc-btn nd-doc-btn-secondary"
+      data-config='{"button":true,"cornerRadius":24,"blurAmount":0.2,"refraction":0.55,"chromAberration":0.03,"edgeHighlight":0.12,"shadowOpacity":0.2,"brightness":-0.02}'
+    >
+      View on GitHub
+    </a>
   </div>
 
   <div className="nd-doc-cards">
@@ -53,9 +68,7 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
       </span>
       <span className="nd-doc-card-link">Learn more →</span>
     </a>
-  </div>
 
-  <div className="nd-doc-cards">
     <a className="nd-doc-card" href="/reference/wasm-api">
       <span className="nd-doc-card-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
