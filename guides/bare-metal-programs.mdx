@@ -1,0 +1,229 @@
+---
+title: "Write and Run Bare-Metal C Programs on NekoDroid"
+description: "Cross-compile C programs for NekoDroid using arm-none-eabi-gcc, start.S, and link.ld. Draw to VRAM, print to UART, and handle keyboard input in a browser-native ARM emulator."
+sidebarTitle: "Bare-Metal Programs"
+keywords:
+  - "bare-metal ARM"
+  - "arm-none-eabi-gcc"
+  - "NekoDroid C program"
+  - "MMIO VRAM"
+  - "UART bare metal"
+  - "cross compile ARM7TDMI"
+---
+
+NekoDroid runs real ARM machine code compiled with a standard bare-metal toolchain. You write C against memory-mapped I/O (MMIO) registers, link with a small assembly stub, and load the resulting `.bin` file directly into the emulator. This page shows the full workflow using programs from the repository.
+
+<Steps>
+  ### Set up the toolchain
+
+  Install `arm-none-eabi-gcc` and `arm-none-eabi-objcopy` from your package manager or the ARM GNU Toolchain. NekoDroid targets the ARMv7 subset implemented by the ARM7TDMI, so the compiler flags stay simple.
+
+  ```bash
+  arm-none-eabi-gcc --version
+  ```
+
+  If the command is not found, install it:
+
+  ```bash
+  # macOS (Homebrew)
+  brew install arm-none-eabi-gcc
+
+  # Ubuntu / Debian
+  sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi
+  ```
+
+  ### Write a C program with MMIO
+
+  Programs communicate with NekoDroid through hardware registers mapped into the address space. The most important ones are VRAM for graphics, UART for text output, and input registers for keyboard and touch.
+
+  A minimal program that clears the screen to dark gray and prints a message to the virtual serial port looks like this:
+
+  ```c
+  // main.c
+  volatile unsigned int * const VRAM     = (unsigned int *)0x04000000;
+  volatile unsigned int * const UART_TX  = (unsigned int *)0x10000000;
+
+  #define WIDTH   800
+  #define HEIGHT  600
+  #define COLOR_BG 0xFF111111
+
+  void print_uart(const char *s) {
+      while (*s) {
+          *UART_TX = *s++;
+      }
+      *UART_TX = '\n';
+  }
+
+  void clear_screen(void) {
+      for (int i = 0; i < WIDTH * HEIGHT; i++) {
+          VRAM[i] = COLOR_BG;
+      }
+  }
+
+  void _start(void) {
+      clear_screen();
+      print_uart("Hello from bare metal!");
+      while (1) { }
+  }
+  ```
+
+  `VRAM` points to the 800x600 RGBA framebuffer at `0x04000000` (1,920,000 bytes). Each pixel is a 32-bit word in little-endian RGBA order. `UART_TX` at `0x10000000` accepts one byte per write; a newline flushes the line to the console log.
+
+  ### Add the assembly bootstrap
+
+  `start.S` is a two-line stub that branches from the reset vector into your C ` _start`:
+
+  ```asm
+  .section .text.boot, "ax"
+  .global _boot
+  _boot:
+      b _start
+  ```
+
+  NekoDroid loads `.bin` files at `0x8000`, so the first instruction executed is the branch at the top of `start.S`.
+
+  ### Link with a custom linker script
+
+  `link.ld` places the code at the correct ROM load address:
+
+  ```ld
+  ENTRY(_start)
+
+  SECTIONS {
+      . = 0x8000;
+
+      .text : {
+          *(.text._start)
+          *(.text.startup)
+          *(.text*)
+      }
+
+      .rodata : { *(.rodata*) }
+      .data   : { *(.data*)   }
+      .bss    : { *(.bss*)    }
+  }
+  ```
+
+  The `. = 0x8000` origin is critical: it matches the emulator's initial `PC` after `init_emulator()`.
+
+  ### Compile and convert to binary
+
+  Run the cross-compiler with `-nostdlib -nostartfiles` because there is no operating system to provide a C runtime. Then strip the ELF down to a flat binary:
+
+  ```bash
+  arm-none-eabi-gcc -nostdlib -nostartfiles \
+    -Ttext=0x8000 -mcpu=arm7tdmi -marm -O2 \
+    -o program.elf start.S main.c
+
+  arm-none-eabi-objcopy -O binary program.elf program.bin
+  ```
+
+  The `-marm` flag forces ARM mode (not Thumb). NekoDroid supports Thumb, but keeping everything in ARM mode avoids interworking complexity while you are learning.
+
+  ### Load the binary into NekoDroid
+
+  1. Start the dev server: `npm run dev`
+  2. Open `http://localhost:5173`
+  3. In the **ARMv7 CPU Debug** panel, click **Select & Load .bin**
+  4. Choose `program.bin`
+
+  The UI auto-switches to **VRAM** mode and resets the CPU so the first instruction is your `_start`. Press **Run** to execute continuously.
+
+  If the program prints to UART, the console log shows the line prefixed with `📟 UART:`.
+</Steps>
+
+## A richer example: the Snake game
+
+The repository includes `snake.c`, a complete game that demonstrates every MMIO peripheral. It runs in a 40x30 grid on the 800x600 framebuffer and uses:
+
+- **VRAM** (`0x04000000`) for pixel drawing
+- **INPUT_KEY** (`0x10000008`) for arrow-key steering
+- **SYS_TIMER** (`0x10000014`) for VSYNC-based frame timing
+- **AUDIO_CTRL** and **AUDIO_FREQ** for square-wave sound effects
+
+Key implementation details you can copy:
+
+```c
+volatile unsigned int * const VRAM       = (unsigned int *)0x04000000;
+volatile unsigned int * const INPUT_KEY  = (unsigned int *)0x10000008;
+volatile unsigned int * const SYS_TIMER  = (unsigned int *)0x10000014;
+volatile unsigned int * const AUDIO_CTRL = (unsigned int *)0x10000018;
+volatile unsigned int * const AUDIO_FREQ = (unsigned int *)0x1000001C;
+```
+
+The game loop waits for the timer to change (a hardware VSYNC signal at ~60 Hz), then moves the snake every fourth frame. Compile it exactly the same way:
+
+```bash
+arm-none-eabi-gcc -nostdlib -nostartfiles -Ttext=0x8000 \
+  -mcpu=arm7tdmi -marm -O2 -o snake.elf start.S snake.c
+arm-none-eabi-objcopy -O binary snake.elf snake.bin
+```
+
+## Sound example: the Theremin
+
+`theremin.c` is a one-file synthesizer that maps touch coordinates to pitch and waveform:
+
+```c
+volatile unsigned int * const INPUT_TOUCH = (unsigned int *)0x1000000C;
+volatile unsigned int * const INPUT_COORD = (unsigned int *)0x10000010;
+volatile unsigned int * const AUDIO_CTRL  = (unsigned int *)0x10000018;
+volatile unsigned int * const AUDIO_FREQ  = (unsigned int *)0x1000001C;
+
+while (1) {
+    if (*INPUT_TOUCH == 1) {
+        unsigned int coords = *INPUT_COORD;
+        unsigned int x = coords & 0xFFFF;
+        unsigned int y = (coords >> 16) & 0xFFFF;
+        *AUDIO_FREQ = 100 + x;
+        *AUDIO_CTRL = 1 | ((y / 150) << 1);
+    } else {
+        *AUDIO_CTRL = 0;
+    }
+}
+```
+
+X position controls frequency (100 Hz to 900 Hz). Y position selects waveform (square, sine, sawtooth, triangle). Audio initializes on the first canvas click, so touch or click once before expecting sound.
+
+## MMIO quick reference
+
+| Register | Address | Access | Description |
+| --- | --- | --- | --- |
+| VRAM | `0x04000000` | R/W | 800x600 RGBA framebuffer (1,920,000 bytes) |
+| UART_TX | `0x10000000` | W | Write byte; newline flushes to console |
+| UART_RX | `0x10000004` | R | Always returns 0 (stub) |
+| INPUT_KEY | `0x10000008` | R | Last pressed keycode, 0 if none |
+| INPUT_TOUCH | `0x1000000C` | R | 1 if touching, 0 otherwise |
+| INPUT_COORD | `0x10000010` | R | `[Y:16][X:16]` packed 32-bit coordinate |
+| SYS_TIMER | `0x10000014` | R | Frame count incremented at ~60 Hz |
+| AUDIO_CTRL | `0x10000018` | R/W | Bit 0 = enable, bits 1-2 = waveform (0-3) |
+| AUDIO_FREQ | `0x1000001C` | R/W | Frequency in Hz |
+
+## Tips for debugging bare-metal code
+
+<Tip>
+  If your program does not appear on the canvas, make sure the render mode is set to **VRAM**. The UI auto-switches when you load a `.bin`, but if you switched it manually afterward, the canvas could be showing a noise or plasma effect instead.
+</Tip>
+
+<Warning>
+  `-nostdlib` means no `printf`, no `malloc`, and no `int main(int argc, char **argv)`. You must provide your own `_start`, your own memory helpers (such as `memmove`), and your own integer division routine (`__aeabi_uidiv`) if the compiler emits division instructions.
+</Warning>
+
+<Note>
+  The emulator initializes `SP` to `RAM size - 0x10000`. For the default 512 MB RAM that gives `0x1FFF0000`, which is plenty of stack space for small bare-metal programs.
+</Note>
+
+## Next steps
+
+<CardGroup>
+  <Card title="CPU Debugger" icon="cpu" href="/guides/cpu-debugger">
+    Step through instructions, inspect flags, and upload hand-assembled hex.
+  </Card>
+
+  <Card title="Boot Linux" icon="linux" href="/guides/boot-linux">
+    Go beyond bare metal: load a zImage and initrd to boot a real Linux kernel.
+  </Card>
+
+  <Card title="Web Interface" icon="monitor" href="/guides/web-interface">
+    Learn how input mapping, audio MMIO, and render modes work from the UI side.
+  </Card>
+</CardGroup>

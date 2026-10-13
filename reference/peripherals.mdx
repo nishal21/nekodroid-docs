@@ -1,0 +1,249 @@
+---
+title: "NekoDroid Peripherals: MMIO Register Reference"
+sidebarTitle: "Peripherals"
+description: "Complete register reference for NekoDroid's emulated peripherals including UART, input, timer, audio, VersatilePB devices, Android Goldfish stubs, CP15/MMU, and Binder."
+keywords:
+  - "NekoDroid"
+  - "MMIO"
+  - "peripherals"
+  - "UART"
+  - "PL011"
+  - "SP804"
+  - "VIC"
+  - "Goldfish"
+  - "Binder"
+  - "timer"
+  - "audio"
+---
+
+NekoDroid exposes hardware through memory-mapped I/O (MMIO). This page lists every register, its offset, read/write behavior, and short C snippets you can paste into bare-metal programs or kernel drivers.
+
+All addresses are little-endian 32-bit unless noted. The MMU intercepts these addresses before they reach RAM.
+
+## Quick-Reference: Custom MMIO Block
+
+Located at `0x10000000`. These registers were added specifically for NekoDroid demos.
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `UART_TX` | W | Write a byte to the serial console |
+| `0x04` | `UART_RX` | R | Always returns `0` (stub) |
+| `0x08` | `INPUT_KEY` | R | DOM keyCode of the held key (0 if none) |
+| `0x0C` | `INPUT_TOUCH` | R | `1` if the mouse/touch is down, else `0` |
+| `0x10` | `INPUT_COORD` | R | `[Y:16][X:16]` packed canvas coordinates |
+| `0x14` | `SYS_TIMER` | R | Frame counter incremented at roughly 60 Hz |
+| `0x18` | `AUDIO_CTRL` | R/W | Bit 0 = enable; bits 1-2 = waveform (0 square, 1 sine, 2 saw, 3 triangle) |
+| `0x1C` | `AUDIO_FREQ` | R/W | Tone frequency in Hz |
+
+### Example: UART Hello World
+
+```c
+#define UART_TX (*(volatile unsigned char *)0x10000000)
+
+void uart_puts(const char *s) {
+    while (*s) {
+        UART_TX = *s++;
+    }
+}
+
+void _start(void) {
+    uart_puts("Hello from bare metal!\n");
+    while (1);
+}
+```
+
+### Example: Reading Touch Input
+
+```c
+#define INPUT_TOUCH (*(volatile unsigned int *)0x1000000C)
+#define INPUT_COORD (*(volatile unsigned int *)0x10000010)
+
+int touch_x(void) {
+    return INPUT_COORD & 0xFFFF;
+}
+
+int touch_y(void) {
+    return (INPUT_COORD >> 16) & 0xFFFF;
+}
+
+int is_touching(void) {
+    return INPUT_TOUCH;
+}
+```
+
+### Example: Audio Square Wave at 440 Hz
+
+```c
+#define AUDIO_CTRL (*(volatile unsigned int *)0x10000018)
+#define AUDIO_FREQ (*(volatile unsigned int *)0x1000001C)
+
+void beep(void) {
+    AUDIO_FREQ = 440;
+    AUDIO_CTRL = 0x01; // enable, square wave
+}
+```
+
+---
+
+## VersatilePB Peripherals
+
+NekoDroid models a subset of the VersatilePB board for Linux bring-up.
+
+### PL011 UART0 (`0x101F1000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `UARTDR` | W | Data register: write a byte to kernel earlyprintk |
+| `0x18` | `UARTFR` | R | Flag register: returns `0` (TX not full) |
+
+Linux kernels compiled for VersatilePB or Goldfish use this path for `earlyprintk`. Characters written here appear in the same UART buffer as the custom `UART_TX` register.
+
+### SP804 Dual Timer (`0x101E2000`)
+
+Only Timer1 is wired. Timer1 interrupts are routed to VIC line 4.
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `Timer1Load` | R/W | Initial load value |
+| `0x04` | `Timer1Value` | R | Current countdown value |
+| `0x08` | `Timer1Control` | R/W | Control bits (enable, mode, etc.) |
+| `0x0C` | `Timer1IntClr` | W | Write to clear Timer1 interrupt on VIC line 4 |
+
+### PL190 VIC (`0x10140000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `VICIRQStatus` | R | Active interrupt status bits |
+| `0x10` | `VICIntEnable` | R/W | Set bits to enable corresponding IRQ lines |
+| `0x14` | `VICIntEnClear` | W | Write bits to disable corresponding IRQ lines |
+
+The VIC output wire is `irq_pending = (vic_int_status & vic_int_enable) != 0`. Writing to `Timer1IntClr` clears bit 4 of `vic_int_status`.
+
+### VersatilePB RTC (`0x10101000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `RTCLow` | R/W | Low 32 bits of the 64-bit time value |
+| `0x04` | `RTCHigh` | R/W | High 32 bits of the 64-bit time value |
+
+---
+
+## CP15 / MMU
+
+The CP15 coprocessor implements short-descriptor translation (section + coarse L2). Only the following registers are accessible via MRC/MCR:
+
+| CRn | CRm | opc1 | opc2 | Name | Reset Value |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 0 | 0 | 0 | `MIDR` | `0x410FC090` (Cortex-A9) |
+| 1 | 0 | 0 | 0 | `SCTLR` | `0x00000C12` |
+| 2 | 0 | 0 | 0 | `TTBR0` | `0x00000000` |
+| 3 | 0 | 0 | 0 | `DACR` | `0x00000000` |
+| 5 | 0 | 0 | 0 | `DFSR` | `0x00000000` |
+| 6 | 0 | 0 | 0 | `DFAR` | `0x00000000` |
+
+CP15 c7 and c8 maintenance operations are modeled as no-ops. Unimplemented reads return `0` and log a warning to the browser console.
+
+---
+
+## Android Goldfish MMIO
+
+These stubs exist for future Android kernel work and for the APK HLE path.
+
+### Goldfish TTY (`0xFF002000`)
+
+Used by Goldfish kernels for `earlyprintk`.
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `PUT_CHAR` | W | Write a single ASCII byte |
+| `0x04` | `BYTES_READY` | R | Stub: returns `0` |
+| `0x08` | `CMD` | W | Command: 2 = write buffer, 3 = read buffer |
+| `0x10` | `DATA_PTR` | R/W | Guest physical address of buffer |
+| `0x14` | `DATA_LEN` | R/W | Buffer length in bytes |
+| `0x20` | `VERSION` | R | Stub: returns `0` |
+
+### Binder IPC (`0x0A000000`)
+
+Simplified MMIO interface (not a full ioctl driver).
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `VERSION` | R | Returns protocol version `7` |
+| `0x04` | `WRITE_SIZE` | R/W | Guest write-buffer size |
+| `0x08` | `WRITE_BUF` | R/W | Guest write-buffer address |
+| `0x0C` | `READ_SIZE` | R/W | Guest read-buffer size |
+| `0x10` | `READ_BUF` | R/W | Guest read-buffer address |
+| `0x14` | `DO_WRITE_READ` | W | Trigger `write_read` transaction (non-zero) |
+| `0x18` | `STATUS` | R | Transaction status |
+| `0x1C` | `LAST_CMD` | R | Last command word consumed |
+| `0x20` | `TX_COUNT` | R | Total transaction count |
+
+### SD/MMC (`0x1C000000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `CMD` | R/W | Command register (write triggers execution) |
+| `0x04` | `ARG` | R/W | Sector address argument |
+| `0x08` | `RESP` | R | Response from last command |
+| `0x0C` | `STATUS` | R | Device status |
+| `0x10` | `DATA` | R | Data port (reads advance sector buffer) |
+| `0x14` | `CTRL` | R/W | Control register |
+
+Supported commands: `CMD12` (STOP_TRANSMISSION), `CMD13` (SEND_STATUS), `CMD17` (READ_SINGLE_BLOCK), `CMD18` (READ_MULTIPLE_BLOCK), `CMD55` (APP_CMD). Set `ARG` to the LBA before writing `CMD`.
+
+### Goldfish Pipe (`0x1D000000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `COMMAND` | R/W | Open, close, poll, read, write |
+| `0x04` | `STATUS` | R | Result of last command |
+| `0x08` | `CHANNEL` | R/W | Active pipe channel ID |
+| `0x0C` | `SIZE` | R/W | Transfer size in bytes |
+| `0x10` | `ADDRESS` | R/W | Guest buffer address |
+| `0x14` | `WAKES` | R/W | Poll events mask |
+| `0x20` | `VERSION` | R | Returns `0` |
+
+### Android Logger (`0x1E000000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `PRIO` | R/W | Log priority (2=VERBOSE, 3=DEBUG, 4=INFO, 5=WARN, 6=ERROR, 7=FATAL) |
+| `0x04` | `TAG` | R/W | Pointer to null-terminated tag string in RAM |
+| `0x08` | `MSG` | R/W | Pointer to null-terminated message string in RAM |
+| `0x0C` | `CTRL` | R/W | Bit 0 = write trigger (cleared automatically) |
+| `0x10` | `STATUS` | R | Bit 0 = ready; bit 1 = buffer full |
+
+### ASHMEM (`0x1B000000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x00` | `CMD` | R/W | 1=CREATE, 2=PIN, 3=UNPIN, 4=PURGE |
+| `0x04` | `SIZE` | R/W | Region size in bytes |
+| `0x08` | `PROT` | R/W | Protection mask |
+| `0x0C` | `PINNED` | R | Pin status |
+| `0x10` | `DATA_PTR` | R | Region ID / data pointer |
+| `0x14` | `STATUS` | R | Bit 0 = initialized |
+
+### Goldfish Framebuffer (`0x1F000000`)
+
+| Offset | Name | R/W | Description |
+| --- | --- | --- | --- |
+| `0x0C` | `ENABLE` | R/W | Non-zero to enable framebuffer |
+| `0x14` | `WIDTH` | R/W | Framebuffer width |
+| `0x18` | `HEIGHT` | R/W | Framebuffer height |
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Memory Map" icon="map" href="/reference/memory-map">
+    High-level address space layout with region sizes and base addresses.
+  </Card>
+
+  <Card title="CPU Debugger" icon="bug" href="/guides/cpu-debugger">
+    Step ARM instructions and inspect registers and flags live.
+  </Card>
+
+  <Card title="Boot Linux" icon="terminal" href="/guides/boot-linux">
+    Load a zImage and initrd using the VersatilePB and Goldfish stubs.
+  </Card>
+</CardGroup>

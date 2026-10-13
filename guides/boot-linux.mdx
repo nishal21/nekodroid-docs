@@ -1,0 +1,142 @@
+---
+title: "Boot a Linux Kernel in the NekoDroid Browser Emulator"
+description: "Upload a zImage and initrd to NekoDroid, configure ATAG boot parameters, and run the ARM goldfish kernel. Learn the current boot status, limitations, and how to run the optional smoke test."
+sidebarTitle: "Boot Linux"
+keywords:
+  - "NekoDroid Linux boot"
+  - "zImage initrd emulator"
+  - "ATAG boot ARM"
+  - "goldfish kernel"
+  - "browser ARM Linux"
+  - "Linux kernel emulator"
+---
+
+NekoDroid can boot a real compressed Linux zImage through an ATAG-compliant boot path. You upload a kernel and optional initramfs from the browser, the emulator sets up the machine tags, and then the ARM CPU begins executing kernel decompression code. This page walks through the upload process, explains what happens under the hood, and describes the current limitations.
+
+<Warning>
+  Linux boot support is **experimental**. The emulator can decompress the kernel and pass early init, but reaching a full shell or userspace is not guaranteed with every kernel image. Use a known-good goldfish zImage for the best results.
+</Warning>
+
+<Steps>
+  ### Prepare a kernel image
+
+  NekoDroid expects a **zImage** (a self-decompressing ARM Linux kernel). You can use a prebuilt goldfish kernel or compile your own with the Android goldfish defconfig.
+
+  If you want to run the repository's optional smoke test, place the kernel at the gitignored path `test-images/zImage`:
+
+  ```bash
+  mkdir -p test-images
+  # Copy or download a goldfish ARM zImage
+  cp /path/to/zImage test-images/zImage
+  cargo test --lib test_optional_goldfish_zimage_smoke -- --nocapture
+  ```
+
+  The test only runs when the file exists; otherwise it skips silently.
+
+  ### Stage the kernel and initrd in the UI
+
+  1. Open `http://localhost:5173` after running `npm run dev`.
+  2. Scroll to the **ARMv7 CPU Debug** panel.
+  3. In the **LINUX KERNEL (.zImage)** row, click the file picker and select your `zImage`.
+  4. (Optional) In the **INITRAMFS (.cpio.gz)** row, select a `cpio.gz` or plain `cpio` archive.
+  5. Click the green **BOOT LINUX** button.
+
+  The UI stages both files into `Uint8Array` buffers and calls the Wasm export `boot_linux_kernel(kernel, initrd)`. The console logs the sizes of both images and reports the CP15 MIDR value in runtime.
+</Steps>
+
+## What happens during boot
+
+When you press **BOOT LINUX**, the emulator performs the following setup:
+
+1. **Machine ID**: Writes `0x046F` (MACH_TYPE_GOLDFISH) into register `R1`.
+2. **ATAGS**: Builds an ATAG list at a fixed RAM address containing:
+   - `ATAG_CORE`
+   - `ATAG_MEM` with the full RAM size
+   - `ATAG_INITRD2` if an initrd was provided
+   - `ATAG_CMDLINE` with `console=ttyS0 earlyprintk`
+3. **CPU state**: Sets `R0 = 0`, `R1 = machine_id`, `R2 = ATAG pointer`, and `PC = 0x10000` (the zImage load address).
+4. **MMU**: The emulator creates a soft identity mapping so the kernel can enable the MMU without crashing on out-of-range page-table bases.
+
+After setup, you must press **Run** to start execution. The CPU decompresses the kernel (you may see `Uncompressing Linux...` in the console from earlyprintk) and eventually jumps to the decompressed kernel entry.
+
+### Early boot milestones you might see
+
+| Milestone | What it means |
+| --- | --- |
+| `Uncompressing Linux...` | The zImage self-extractor is running and decompressing the kernel into RAM at `0x8000`. |
+| `done, booting the kernel.` | Decompression succeeded. The CPU is about to enter the real kernel `stext`. |
+| UART silence after decompress | The kernel has passed early init but may be initializing devices or page tables before printing again. |
+| `CPU halted` | The kernel hit an unimplemented path, a data abort, or a deliberate `B .` loop (for example, `__error_p`). |
+
+<Note>
+  The emulator runs the decompressor in real time. A goldfish zImage can take tens of millions of cycles to finish. The **CPU Cycles** metric updates every 10 frames, so you can watch progress.
+</Note>
+
+## Optional smoke tests
+
+The Rust test suite contains several optional tests that exercise the boot path without the browser UI. They all skip automatically when `test-images/zImage` is missing.
+
+```bash
+# Basic load and boot setup
+cargo test --lib test_optional_goldfish_zimage_smoke -- --nocapture
+
+# Execute 50k instructions after boot and assert forward progress
+cargo test --lib test_optional_goldfish_zimage_steps -- --nocapture
+
+# Run until "done, booting" appears in UART capture
+cargo test --lib test_optional_goldfish_inflate_diag -- --nocapture
+
+# Assert the CPU does not get stuck in the __error_p stub
+cargo test --lib test_optional_goldfish_post_decompress -- --nocapture
+```
+
+These tests use 256 MB RAM and a Cortex-A9 MIDR (`0x410FC090`) so the kernel `__lookup_processor_type` path succeeds.
+
+## Known limitations
+
+<AccordionGroup>
+  <Accordion title="Kernel compatibility">
+    Goldfish kernels built for the Android emulator are the best-supported target. Generic ARM VersatilePB kernels may work, but device-tree or machine-type mismatches can cause early hangs.
+  </Accordion>
+
+  <Accordion title="MMU behavior">
+    The emulator implements a short-descriptor MMU (sections and coarse L2 tables) with CP15 register access. If a kernel sets up page tables outside RAM, the emulator falls back to a soft identity mapping to avoid translation faults, but this is a best-effort workaround, not full Linux MMU compliance.
+  </Accordion>
+
+  <Accordion title="Device drivers">
+    Many standard Linux devices (block layer, networking, real-time clock) are stubbed or missing. The kernel may boot far enough to initialize the UART and timer, but mounting a root filesystem or bringing up `eth0` will fail unless the driver matches a stubbed goldfish device.
+  </Accordion>
+
+  <Accordion title="Performance">
+    Decompression happens in interpreted ARM instructions at browser speed. A zImage that takes a fraction of a second on QEMU can take 10-20 seconds in NekoDroid. The batch size is one million instructions per animation frame to keep the UI responsive.
+  </Accordion>
+
+  <Accordion title="Initramfs size">
+    The 32 MiB soft upload cap applies to the combined browser upload. Large initramfs archives may need to be trimmed or gzip-compressed more aggressively.
+  </Accordion>
+</AccordionGroup>
+
+## Debugging a stalled boot
+
+If the CPU halts immediately or the PC stops moving:
+
+1. Check the console log for `⚠️ Boot appears stalled at PC=...`. The UI detects when the PC stays unchanged for 10 consecutive probe intervals and stops automatically.
+2. Look at the **DISASSEMBLY** panel. If the current instruction is `B .` (branch to self), the kernel has deliberately halted, usually because of an unimplemented driver or a failed processor type lookup.
+3. Verify the kernel is a zImage, not a plain `Image` or `uImage`. The UI accepts `.zImage` and `Image` extensions, but U-Boot wrapped images are not supported.
+4. Try without an initramfs first. A missing or corrupt initrd is a common cause of early boot failure.
+
+## Next steps
+
+<CardGroup>
+  <Card title="Bare-Metal Programs" icon="code" href="/guides/bare-metal-programs">
+    Before booting Linux, practice writing small C programs that draw to VRAM and print to UART.
+  </Card>
+
+  <Card title="CPU Debugger" icon="cpu" href="/guides/cpu-debugger">
+    Use the debugger to single-step kernel decompression and inspect register state at each milestone.
+  </Card>
+
+  <Card title="Web Interface" icon="monitor" href="/guides/web-interface">
+    Understand render modes, metrics, and input mapping while you watch the kernel boot.
+  </Card>
+</CardGroup>

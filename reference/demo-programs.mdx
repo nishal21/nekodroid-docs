@@ -1,0 +1,322 @@
+---
+title: "NekoDroid Demo Programs: Build and Run Guide"
+sidebarTitle: "Demo Programs"
+description: "Build and run the five built-in NekoDroid demo programs with arm-none-eabi-gcc: hello UART, VRAM test, input test, snake game, and theremin synthesizer."
+keywords:
+  - "NekoDroid"
+  - "demo programs"
+  - "bare-metal"
+  - "ARM"
+  - "snake"
+  - "theremin"
+  - "VRAM"
+  - "UART"
+  - "build"
+---
+
+NekoDroid ships with five bare-metal ARM demo programs. Each one exercises a different part of the emulator: UART output, VRAM drawing, input polling, game logic, and Web Audio integration. All programs are written in C with `-nostdlib` and are compiled for the ARM7TDMI target. They run directly at physical address `0x8000` without an operating system.
+
+<Steps>
+  <Step title="Install the toolchain">
+    You need the `arm-none-eabi-gcc` cross-compiler. On Ubuntu, install it with:
+
+    ```bash
+    sudo apt-get install gcc-arm-none-eabi binutils-arm-none-eabi
+    ```
+
+    On macOS with Homebrew:
+
+    ```bash
+    brew install --cask gcc-arm-embedded
+    ```
+  </Step>
+  <Step title="Clone the repo">
+    ```bash
+    git clone https://github.com/nishal21/NekoDroid.git
+    cd NekoDroid
+    ```
+  </Step>
+  <Step title="Build the demos">
+    Each demo can be built from its source file at the repo root. The linker script (`link.ld`) places the code at `0x8000`.
+  </Step>
+</Steps>
+
+## Build all demos
+
+Run these commands from the repo root to produce `.bin` files you can load into the emulator UI.
+
+```bash
+# hello UART (with custom startup assembly)
+arm-none-eabi-gcc -nostdlib -nostartfiles -Ttext=0x8000 \
+  -mcpu=arm7tdmi -marm -O2 -o hello.elf start.S main.c
+arm-none-eabi-objcopy -O binary hello.elf hello.bin
+
+# VRAM test (with linker script)
+arm-none-eabi-gcc -nostdlib -nostartfiles -T link.ld \
+  -mcpu=arm7tdmi -marm -O2 -o vram_test.elf start.S vram_test.c
+arm-none-eabi-objcopy -O binary vram_test.elf vram_test.bin
+
+# Input test
+arm-none-eabi-gcc -nostdlib -nostartfiles -T link.ld \
+  -mcpu=arm7tdmi -marm -O2 -o input_test.elf start.S input_test.c
+arm-none-eabi-objcopy -O binary input_test.elf input_test.bin
+
+# Snake game
+arm-none-eabi-gcc -nostdlib -nostartfiles -Ttext=0x8000 \
+  -mcpu=arm7tdmi -marm -O2 -o snake.elf start.S snake.c
+arm-none-eabi-objcopy -O binary snake.elf snake.bin
+
+# Theremin synthesizer
+arm-none-eabi-gcc -nostdlib -nostartfiles -Ttext=0x8000 \
+  -mcpu=arm7tdmi -marm -O2 -o theremin.elf start.S theremin.c
+arm-none-eabi-objcopy -O binary theremin.elf theremin.bin
+```
+
+<Tip>
+  `start.S` is a minimal 2-instruction boot stub that branches to `_start`. It is shared by all demos.
+</Tip>
+
+The `link.ld` script is slightly more detailed than `Ttext=0x8000` because it preserves `.rodata` and `.bss` sections, which `vram_test.c` and `input_test.c` rely on for their data.
+
+## Demo 1: Hello UART (`main.c`)
+
+This is the simplest possible program. It writes two greeting lines to the legacy virtual UART at `0x10000000` and then halts.
+
+```c
+volatile unsigned char * const UART_TX = (unsigned char *)0x10000000;
+
+void print_string(const char *str) {
+    while (*str) {
+        *UART_TX = *str++;
+    }
+}
+
+void _start() {
+    print_string("Hello from Bare-Metal C running on NekoDroid!\n");
+    print_string("If you are reading this, your ARM CPU is fully functional.\n");
+    while (1) {}
+}
+```
+
+### How to run
+
+1. Build `hello.bin`.
+2. Start the dev server: `npm run dev`.
+3. In the UI, click **Select & Load .bin** and choose `hello.bin`.
+4. Switch to **VRAM** render mode (or keep the default; UART output goes to the console panel).
+5. Click **Run**. You will see the greeting lines appear in the browser console.
+
+## Demo 2: VRAM Test (`vram_test.c`)
+
+Draws three colored squares (red, green, blue) on the framebuffer and confirms completion via UART.
+
+```c
+volatile unsigned int * const VRAM = (unsigned int *)0x04000000;
+volatile unsigned char * const UART_TX = (unsigned char *)0x10000000;
+
+#define WIDTH  800
+#define HEIGHT 600
+
+void fill_rect(int x0, int y0, int x1, int y1, unsigned int color) {
+    for (int y = y0; y < y1; y++) {
+        for (int x = x0; x < x1; x++) {
+            VRAM[y * WIDTH + x] = color;
+        }
+    }
+}
+
+void _start(void) {
+    fill_rect(100, 100, 200, 200, 0xFF0000FF); // red
+    fill_rect(250, 100, 350, 200, 0xFF00FF00); // green
+    fill_rect(400, 100, 500, 200, 0xFFFF0000); // blue
+
+    // UART confirmation
+    volatile unsigned char *tx = UART_TX;
+    const char *msg = "VRAM test complete: RGB squares drawn!\n";
+    while (*msg) *tx = *msg++;
+
+    while (1) {}
+}
+```
+
+### How to run
+
+1. Build and load `vram_test.bin`.
+2. The UI automatically switches to **VRAM** mode.
+3. Click **Run**. You will see a black screen with three colored squares appear.
+4. Check the console log for the confirmation message.
+
+<Note>
+  Color values are in little-endian RGBA format. `0xFF0000FF` means red=0xFF, alpha=0xFF. Keep the framebuffer at `0x04000000` and use `y * 800 + x` to index pixels.
+</Note>
+
+## Demo 3: Input Test (`input_test.c`)
+
+An interactive demo that polls keyboard, touch, and timer registers and draws a live UI on the framebuffer.
+
+```c
+volatile unsigned int * const VRAM       = (unsigned int *)0x04000000;
+volatile unsigned char * const UART_TX   = (unsigned char *)0x10000000;
+volatile unsigned int * const INPUT_KEY  = (unsigned int *)0x10000008;
+volatile unsigned int * const INPUT_TOUCH= (unsigned int *)0x1000000C;
+volatile unsigned int * const INPUT_COORD= (unsigned int *)0x10000010;
+volatile unsigned int * const SYS_TIMER  = (unsigned int *)0x10000014;
+```
+
+### Features
+
+- **Key display**: Draws a bar whose width is proportional to the current keycode.
+- **Touch cursor**: Shows a crosshair that follows your mouse or finger.
+- **Timer bar**: A horizontal bar that grows with the frame counter.
+- **Trail dots**: Leaves magenta dots where you have touched.
+
+### How to run
+
+1. Build and load `input_test.bin`.
+2. Switch to **VRAM** mode.
+3. Click **Run**.
+4. Press arrow keys or WASD to see the keycode bar change.
+5. Click and drag on the canvas to move the crosshair and leave a trail.
+
+## Demo 4: Snake (`snake.c`)
+
+A complete grid-based Snake game that uses VRAM, keyboard input, the VSYNC timer, and the audio processing unit. It is the most complex demo and demonstrates all major MMIO devices working together.
+
+### Key features
+
+- **VRAM drawing**: The screen is divided into a 40x30 grid. Each cell is 19x19 pixels with a 1-pixel gap.
+- **Keyboard control**: Arrow keys change direction. The 180-degree reversal is blocked.
+- **VSYNC timing**: The game updates every 4 timer ticks (~15 moves per second at 60 Hz).
+- **Audio feedback**: A 600 Hz square wave beeps when you eat food. A 150 Hz tone plays on game over.
+- **No full-screen clear**: Only the old tail and new head cells are redrawn for performance.
+
+### Minimal libc stubs
+
+Because the build uses `-nostdlib`, the source includes its own `memmove` and `__aeabi_uidivmod` implementations. `memmove` is used internally by GCC for array copies, and `__aeabi_uidivmod` provides the 32-bit unsigned division that `%` compiles to.
+
+### How to run
+
+1. Build and load `snake.bin`.
+2. Switch to **VRAM** mode.
+3. Click **Run**.
+4. Use arrow keys to steer the green snake toward the red food.
+5. After game over, press any arrow key to restart.
+
+### Colors
+
+| Name | Value | Usage |
+| --- | --- | --- |
+| `COLOR_BG` | `0xFF111111` | Empty grid cells |
+| `COLOR_SNAKE` | `0xFF00FF00` | Snake body |
+| `COLOR_HEAD` | `0xFF88FF88` | Snake head |
+| `COLOR_FOOD` | `0xFF0000FF` | Food |
+| `COLOR_DEAD` | `0xFF4444FF` | Flash on collision |
+
+## Demo 5: Theremin (`theremin.c`)
+
+A touch-controlled synthesizer that maps horizontal position to pitch and vertical position to waveform.
+
+```c
+volatile unsigned int * const INPUT_TOUCH = (unsigned int *)0x1000000C;
+volatile unsigned int * const INPUT_COORD = (unsigned int *)0x10000010;
+volatile unsigned int * const AUDIO_CTRL  = (unsigned int *)0x10000018;
+volatile unsigned int * const AUDIO_FREQ  = (unsigned int *)0x1000001C;
+
+void _start(void) {
+    while (1) {
+        if (*INPUT_TOUCH == 1) {
+            unsigned int coords = *INPUT_COORD;
+            unsigned int x = coords & 0xFFFF;
+            unsigned int y = (coords >> 16) & 0xFFFF;
+
+            *AUDIO_FREQ = 100 + x;           // 100 Hz to 900 Hz
+            unsigned int wave_type = (y / 150) & 3;
+            *AUDIO_CTRL = 1 | (wave_type << 1); // enable + waveform
+        } else {
+            *AUDIO_CTRL = 0;                  // silence
+        }
+    }
+}
+```
+
+### How to run
+
+1. Build and load `theremin.bin`.
+2. Switch to **VRAM** mode.
+3. Click **Run**.
+4. Click anywhere on the canvas to initialize Web Audio (browsers require a user gesture).
+5. Drag your mouse/finger across the canvas. X axis controls pitch. Y axis changes the waveform (top=square, then sine, saw, triangle).
+6. Release to silence.
+
+<Warning>
+  Web Audio requires a user interaction before it starts. The first canvas click both initializes the `AudioContext` and sends the touch event into the emulator.
+</Warning>
+
+## Linker Script (`link.ld`)
+
+The linker script used by `vram_test.c` and `input_test.c`:
+
+```ld
+ENTRY(_start)
+
+SECTIONS {
+    . = 0x8000;
+
+    .text : {
+        *(.text._start)
+        *(.text.startup)
+        *(.text*)
+    }
+
+    .rodata : { *(.rodata*) }
+    .data   : { *(.data*)   }
+    .bss    : { *(.bss*)    }
+}
+```
+
+This ensures the boot code is placed at `0x8000`, which matches the emulator's default reset vector.
+
+## Startup Assembly (`start.S`)
+
+```asm
+.section .text.boot, "ax"
+.global _boot
+_boot:
+    b _start
+```
+
+This 2-instruction stub is the first code executed after reset. It simply branches to the C `_start` entry point.
+
+## Uploading demos in the UI
+
+<Steps>
+  <Step title="Start the dev server">
+    ```bash
+    wasm-pack build --target web
+    npm run dev
+    ```
+
+    Open [http://localhost:5173](http://localhost:5173)
+  </Step>
+  <Step title="Load the .bin file">
+    Click the **Select & Load .bin** button, choose your compiled `.bin`, and the emulator loads it at `0x8000`.
+  </Step>
+  <Step title="Switch to VRAM mode">
+    For graphics demos, click the **VRAM** button so the canvas displays the CPU framebuffer instead of the demo renderer.
+  </Step>
+  <Step title="Run">
+    Click **Run**. The CPU executes instructions each frame. You can pause, step, or inspect registers in the debug panel.
+  </Step>
+</Steps>
+
+<Accordion title="FAQ: Why do some demos use -Ttext=0x8000 and others use link.ld?">
+  `-Ttext=0x8000` is a quick way to tell the linker to place the `.text` section at `0x8000`. It works for simple programs with no data sections. `link.ld` is more explicit: it controls the order and placement of `.text`, `.rodata`, `.data`, and `.bss`. Use the linker script when your program has global data or strings, as `vram_test.c` and `input_test.c` do.
+</Accordion>
+
+<Accordion title="FAQ: Can I write demos in Rust instead of C?">
+  Yes. Any toolchain that produces a flat ARM binary and places the entry point near `0x8000` will work. You would need to configure your Rust target to emit raw binaries and define your own panic handler and memory layout. The emulator loads whatever bytes you give it via `load_rom`.
+</Accordion>
+
+<Accordion title="FAQ: The audio demo is silent. What should I check?">
+  First, ensure you clicked the canvas at least once to unlock the Web Audio context. Second, check that the UI render loop is active (not paused). Third, verify in the browser developer tools that `get_audio_ctrl()` returns a non-zero value when you are touching the canvas. If `AUDIO_CTRL` bit 0 is `0`, the program may not be writing the register correctly.
+</Accordion>

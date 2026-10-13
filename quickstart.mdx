@@ -1,47 +1,150 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "NekoDroid Quickstart: Build and Run Your First Demo"
+sidebarTitle: "Quickstart"
+description: "Clone the NekoDroid repo, build the Rust WebAssembly module, start the dev server, and verify the setup with the ARM demo or APK fixture."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+This guide gets you from a fresh clone to a running NekoDroid emulator in your browser. You will install prerequisites, build the WebAssembly module, start the dev server, and verify the setup with either the built-in ARM demo or the `hello.apk` HLE fixture.
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+![NekoDroid build pipeline diagram showing Rust source compiled by wasm-pack into WebAssembly, then bundled by Vite and served to the browser](/images/build-flow.svg)
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, make sure you have the following tools installed.
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+<CardGroup cols={3}>
+  <Card title="Rust stable" icon="gear">
+    Install from [rustup.rs](https://rustup.rs). Add the `wasm32-unknown-unknown` target with `rustup target add wasm32-unknown-unknown`.
+  </Card>
 
-## Get started
+  <Card title="wasm-pack" icon="box">
+    Install from [wasm-pack.github.io](https://wasm-pack.github.io/wasm-pack/installer/). This compiles Rust to WebAssembly and generates the JavaScript bindings.
+  </Card>
+
+  <Card title="Node.js" icon="terminal">
+    Node.js with `npm` for the Vite frontend build.
+  </Card>
+</CardGroup>
+
+If you need a full walkthrough, see the [Installation](/installation) guide.
+
+## Build and Launch
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
+  <Step title="Clone the repository">
     ```bash
-    npm install your-package
+    git clone https://github.com/nishal21/NekoDroid.git
+    cd NekoDroid
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
-
+  <Step title="Install Node dependencies">
     ```bash
-    your-cli init
+    npm install
     ```
+
+    This installs Vite, TypeScript, and the Wasm plugins for the frontend build.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
-
+  <Step title="Build the Wasm module">
     ```bash
-    your-cli start
+    wasm-pack build --target web
     ```
+
+    This compiles the Rust crate to `pkg/nekodroid.js` and `pkg/nekodroid_bg.wasm`. The first build downloads all dependencies, which takes several minutes. Subsequent builds are faster.
+  </Step>
+  <Step title="Start the dev server">
+    ```bash
+    npm run dev
+    ```
+
+    Open your browser to [http://localhost:5173](http://localhost:5173). You should see the NekoDroid UI with the canvas, mode buttons, and debug panel.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Verify Your Setup
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Choose either tab below to confirm the emulator is working.
+
+<Tabs>
+  <Tab title="ARM Demo">
+    The fastest way to verify the CPU is to load the built-in demo and step through it.
+
+    <Steps>
+      <Step title="Load the demo program">
+        In the **ARMv7 CPU Debug** panel, click **Load Demo**. This loads 10 ARM instructions at address `0x8000`.
+      </Step>
+      <Step title="Step through execution">
+        Click **Step** repeatedly. Watch the register grid update:
+
+        | Step | Instruction | Result |
+        | --- | --- | --- |
+        | 1 | `MOV R0, #5` | `R0 = 00000005` |
+        | 2 | `MOV R1, #10` | `R1 = 0000000A` |
+        | 3 | `ADD R2, R0, R1` | `R2 = 0000000F` |
+
+        Changed registers flash cyan so you can spot what changed.
+      </Step>
+      <Step title="Run in burst mode">
+        Click **Run** to execute instructions continuously. The cycle count updates live in the metrics panel. Click **Stop** to pause.
+      </Step>
+    </Steps>
+
+    <Tip>
+      Steps 4 through 10 demonstrate branching: `SUB R3, R2, #1`, `CMP R3, #14`, `BEQ`, and conditional `MOV` into `R4`.
+    </Tip>
+  </Tab>
+  <Tab title="APK Fixture">
+    The `testdata/hello.apk` file is a minimal APK fixture that demonstrates the HLE Dalvik runtime.
+
+    <Steps>
+      <Step title="Load the APK via file picker">
+        1. In the UI, scroll to the **APK (HLE DEX)** section.
+        2. Click **Load APK** and select `testdata/hello.apk` from your local filesystem.
+        3. The log shows the package name and class count.
+
+        <Note>
+          You must select the file through the browser file picker. The dev server does not serve `testdata/` as a browsable path.
+        </Note>
+      </Step>
+      <Step title="Run the APK">
+        Click **Run APK (HLE)**. The emulator launches the Dalvik VM, runs up to 50,000 steps, and automatically switches the display to VRAM mode. The logcat panel shows:
+
+        ```text
+        Hello from NekoDroid
+        ```
+      </Step>
+      <Step title="View the VRAM output">
+        The display switches to VRAM automatically. You will see block glyphs representing the blitted text. The built-in font renderer is basic, so the glyphs are not fully readable, but their presence confirms the blit path works.
+      </Step>
+    </Steps>
+
+    <Tip>
+      To regenerate the fixture from source, run `cargo test --lib write_fixtures_to_testdata`.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<Accordion title="The dev server starts but the page shows a Wasm error">
+  Make sure you ran `wasm-pack build --target web` and that `pkg/nekodroid_bg.wasm` exists. If you clean the build, rerun wasm-pack before `npm run dev`.
+</Accordion>
+
+<Accordion title="The APK file picker shows no files or the load fails silently">
+  Ensure you are selecting `testdata/hello.apk` from your local filesystem, not typing a URL. The Vite dev server does not expose `testdata` as a static route.
+</Accordion>
+
+<Accordion title="The register grid does not update when I click Step">
+  Check the browser console for Rust panic messages. If the Wasm module failed to initialize, the debug panel may appear but have no live CPU connection. Refresh after confirming `wasm-pack build` succeeded.
+</Accordion>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="wrench" href="/installation">
+    Full prerequisites, production builds, static deployment, and troubleshooting.
+  </Card>
+
+  <Card title="How It Works" icon="microchip" href="/how-it-works">
+    Understand the browser-to-Wasm architecture, CPU pipeline, MMU, and rendering loop.
+  </Card>
+</CardGroup>

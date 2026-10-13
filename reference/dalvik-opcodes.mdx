@@ -1,0 +1,116 @@
+---
+title: "NekoDroid Dalvik Opcodes: HLE Instruction Set"
+sidebarTitle: "Dalvik Opcodes"
+description: "Reference of implemented Dalvik bytecode opcodes in NekoDroid's APK HLE interpreter, including hex values, descriptions, and behavior for unimplemented instructions."
+keywords:
+  - "NekoDroid"
+  - "Dalvik"
+  - "opcode"
+  - "DEX"
+  - "APK HLE"
+  - "bytecode"
+  - "interpreter"
+  - "Android"
+---
+
+NekoDroid's APK HLE layer runs Dalvik bytecode without booting full Android. This page lists every opcode the interpreter implements, with hex values and behavior notes verified from the source. Opcodes outside this set halt the VM without crashing the page.
+
+## Opcode Reference Table
+
+| Hex | Mnemonic | Description |
+| --- | --- | --- |
+| `0x00` | `nop` | No operation |
+| `0x01` | `move` | Copy register value (8-bit registers) |
+| `0x02` | `move/from16` | Copy register value (16-bit source) |
+| `0x03` | `move/16` | Copy register value (16-bit both) |
+| `0x07` | `move-object` | Copy object reference (8-bit) |
+| `0x08` | `move-object/from16` | Copy object reference (16-bit source) |
+| `0x0A` | `move-result` | Copy method return value (integer) |
+| `0x0C` | `move-result-object` | Copy method return value (object) |
+| `0x0E` | `return-void` | Return from void method |
+| `0x0F` | `return` | Return 32-bit value from method |
+| `0x11` | `return-object` | Return object reference from method |
+| `0x12` | `const/4` | Load 4-bit signed constant into register |
+| `0x13` | `const/16` | Load 16-bit signed constant into register |
+| `0x14` | `const` | Load 32-bit signed constant into register |
+| `0x15` | `const/high16` | Load 16-bit constant into upper half of register |
+| `0x1A` | `const-string` | Load string reference into register |
+| `0x1B` | `const-string/jumbo` | Load large string reference into register |
+| `0x1F` | `check-cast` | Runtime type check (soft no-op in HLE) |
+| `0x21` | `array-length` | Store array length into register |
+| `0x22` | `new-instance` | Allocate new object instance |
+| `0x23` | `new-array` | Allocate new array of given length |
+| `0x28` | `goto` | Unconditional branch (8-bit offset) |
+| `0x29` | `goto/16` | Unconditional branch (16-bit offset) |
+| `0x32` | `if-eq` | Branch if two registers are equal |
+| `0x33` | `if-ne` | Branch if two registers are not equal |
+| `0x34` | `if-lt` | Branch if first register is less than second |
+| `0x35` | `if-ge` | Branch if first register is greater than or equal to second |
+| `0x36` | `if-gt` | Branch if first register is greater than second |
+| `0x37` | `if-le` | Branch if first register is less than or equal to second |
+| `0x38` | `if-eqz` | Branch if register is equal to zero |
+| `0x39` | `if-nez` | Branch if register is not equal to zero |
+| `0x44` | `aget` | Read array element into register |
+| `0x4B` | `aput` | Write register value into array element |
+| `0x54` | `iget-object` | Read instance object field (minimal stub, returns null object) |
+| `0x5B` | `iput-object` | Write instance object field (minimal stub) |
+| `0x62` | `sget-object` | Read static object field (returns stub `PrintStream` for `System.out`) |
+| `0x69` | `sput-object` | Write static object field (minimal stub) |
+| `0x6E` | `invoke-virtual` | Invoke virtual method |
+| `0x6F` | `invoke-super` | Invoke superclass method |
+| `0x70` | `invoke-direct` | Invoke direct (private/constructor) method |
+| `0x71` | `invoke-static` | Invoke static method |
+| `0x72` | `invoke-interface` | Invoke interface method |
+| `0x90` | `add-int` | Integer addition: `vA = vB + vC` |
+| `0x91` | `sub-int` | Integer subtraction: `vA = vB - vC` |
+| `0x92` | `mul-int` | Integer multiplication: `vA = vB * vC` |
+| `0xB0` | `add-int/2addr` | Integer addition in-place: `vA = vA + vB` |
+| `0xB1` | `sub-int/2addr` | Integer subtraction in-place: `vA = vA - vB` |
+| `0xB2` | `mul-int/2addr` | Integer multiplication in-place: `vA = vA * vB` |
+
+## HLE Stubs and Limitations
+
+Some opcodes are implemented as stubs sufficient for `testdata/hello.apk` but not full Android fidelity:
+
+| Opcode | Stub Behavior |
+| --- | --- |
+| `check-cast` | Soft no-op: object passes through without type verification |
+| `iget-object` | Always returns null (`Obj(0)`), so instance fields are not stored |
+| `sget-object` | Returns a dummy `Ljava/io/PrintStream;` instance so `System.out.println` can route to the HLE log |
+| `iput-object` / `sput-object` | No-op store |
+| `invoke-*` | First tries HLE host stubs (Log, println, canvas text). Falls back to DEX-encoded methods. Unknown native/framework methods succeed silently and return `Int(0)` |
+| `aget` | Invalid array or out-of-range reads return `0` instead of throwing |
+
+## Unimplemented Opcode Behavior
+
+When the interpreter encounters an opcode not in the table above, it:
+
+1. Halts the VM (`halted = true`)
+2. Records the halt reason: `unimplemented opcode 0xNN at pc=M`
+3. Returns `AndroidError::UnimplementedOpcode { op, pc }`
+4. The Wasm wrappers swallow the error: `run_dalvik_batch` returns `0` and `step_dalvik` returns `false`. The reason is not written to the HLE logs, so check `get_apk_info()` for `"halted": true`
+
+<Warning>
+  Play Store APKs, multidex files, JNI `.so` libraries, and apps using unimplemented opcodes will hit this halt path. Use the [Supported APKs](/android/supported-apks) guide to verify compatibility before loading.
+</Warning>
+
+## External References
+
+- [Android Dalvik Bytecode Format](https://source.android.com/docs/core/runtime/dalvik-bytecode) (official Android documentation)
+- [Dalvik Executable Format](https://source.android.com/docs/core/runtime/dex-format) (DEX file structure)
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Run an APK" icon="play" href="/android/run-apk">
+    Load and run a compatible APK through the HLE interpreter.
+  </Card>
+
+  <Card title="Supported APKs" icon="check-circle" href="/android/supported-apks">
+    Learn what APK structures and framework calls are compatible.
+  </Card>
+
+  <Card title="Build a Test APK" icon="code" href="/android/build-test-apk">
+    Create your own minimal APK that runs on NekoDroid's Dalvik HLE.
+  </Card>
+</CardGroup>

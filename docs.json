@@ -1,53 +1,105 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "theme": "aspen",
+  "name": "NekoDroid",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#7C3AED",
+    "light": "#A78BFA",
+    "dark": "#6D28D9"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/images/nekodroid-favicon.svg",
   "navigation": {
-    "pages": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Start Here",
+            "icon": "rocket",
+            "pages": [
+              "index",
+              "quickstart",
+              "installation",
+              "how-it-works"
+            ]
+          },
+          {
+            "group": "Explore & Build",
+            "icon": "microchip",
+            "pages": [
+              "guides/web-interface",
+              "guides/cpu-debugger",
+              "guides/bare-metal-programs",
+              "guides/boot-linux"
+            ]
+          },
+          {
+            "group": "Android HLE",
+            "icon": "mobile-screen",
+            "pages": [
+              "android/run-apk",
+              "android/supported-apks",
+              "android/build-test-apk"
+            ]
+          },
+          {
+            "group": "Project & Help",
+            "icon": "circle-question",
+            "pages": [
+              "faq",
+              "contributing"
+            ]
+          },
+          {
+            "group": "Images",
+            "pages": [
+              "images/build-pipeline.svg",
+              "images/nekodroid-execution-paths.svg"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Machine Reference",
+            "icon": "memory",
+            "pages": [
+              "reference/memory-map",
+              "reference/peripherals",
+              "reference/dalvik-opcodes"
+            ]
+          },
+          {
+            "group": "API & Examples",
+            "icon": "terminal",
+            "pages": [
+              "reference/wasm-api",
+              "reference/demo-programs"
+            ]
+          }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/images/nekodroid-logo-light.svg",
+    "dark": "/images/nekodroid-logo-dark.svg"
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
+        "href": "https://github.com/nishal21/NekoDroid/issues",
+        "label": "Report an Issue"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "View Source",
+      "href": "https://github.com/nishal21/NekoDroid"
     }
   },
   "contextual": {
@@ -64,9 +116,60 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/nishal21/NekoDroid"
+    },
+    "links": [
+      {
+        "header": "NekoDroid",
+        "items": [
+          {
+            "label": "Source Code",
+            "href": "https://github.com/nishal21/NekoDroid"
+          },
+          {
+            "label": "Report an Issue",
+            "href": "https://github.com/nishal21/NekoDroid/issues"
+          }
+        ]
+      },
+      {
+        "header": "Docs Powered By",
+        "items": [
+          {
+            "label": "Mintlify",
+            "href": "https://mintlify.com"
+          },
+          {
+            "label": "Mintlify Documentation",
+            "href": "https://mintlify.com/docs"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Explore NekoDroid, a Rust and WebAssembly ARM emulator with CPU debugging, bare-metal programs, Linux boot experiments, and constrained APK HLE.",
+  "background": {
+    "decoration": "grid",
+    "color": {
+      "light": "#FAF9FE",
+      "dark": "#0E0C18"
     }
+  },
+  "seo": {
+    "metatags": {
+      "og:site_name": "NekoDroid",
+      "og:locale": "en_US",
+      "author": "nishal21",
+      "theme-color": "#7C3AED",
+      "keywords": "NekoDroid, ARM emulator, Rust, WebAssembly, Dalvik HLE, APK browser emulator"
+    },
+    "indexing": "navigable"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": "system"
+  },
+  "fonts": {
+    "family": "Inter"
   }
 }

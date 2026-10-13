@@ -1,20 +1,94 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "NekoDroid: Explore ARM and APK Emulation in a Browser"
+sidebarTitle: "Overview"
+description: "Build NekoDroid with Rust and WebAssembly, step through ARM instructions, try bare-metal demos, and run small APK fixtures with constrained Dalvik HLE."
+keywords:
+  - "NekoDroid"
+  - "browser ARM emulator"
+  - "Rust WebAssembly"
+  - "Dalvik HLE"
+  - "APK emulator"
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+NekoDroid turns your browser into an interactive emulation lab. Step through ARM and Thumb code, draw pixels through a virtual framebuffer, or run small APK fixtures in a separate Dalvik interpreter. Start with a working demo, then follow the path that matches your experiment.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<Frame caption="A machine inside your browser. Original NekoDroid concept illustration, not a screenshot.">
+  <img
+    src="/images/nekodroid-hero.svg"
+    alt="NekoDroid cat-shaped WebAssembly chip connected to a browser showing ARM instructions, with separate ARM CPU and APK HLE paths."
+  />
+</Frame>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## Choose Your First Experiment
+
+<CardGroup cols={2}>
+  <Card title="Get Your First Result" icon="rocket" href="/quickstart">
+    Build the emulator and verify it with three instructions or the Hello APK fixture. Start here if you're new.
+  </Card>
+
+  <Card title="Watch the CPU Think" icon="microchip" href="/guides/cpu-debugger">
+    Single-step ARM code. Inspect registers, condition flags, and the next instructions as values change.
+  </Card>
+
+  <Card title="Run a Small APK" icon="mobile-screen" href="/android/run-apk">
+    Load the included fixture and see Dalvik bytecode produce HLE logs, without booting Android.
+  </Card>
+
+  <Card title="Build Your Own Interface" icon="code" href="/reference/wasm-api">
+    Use the JavaScript API to control execution, read memory, and connect your own rendering loop.
+  </Card>
+</CardGroup>
+
+## From Instructions to Pixels
+
+Your experiments can go beyond the debugger. Load a compiled `.bin`, explore framebuffer and input registers, or try the included Snake and theremin programs.
+
+<CardGroup cols={2}>
+  <Card title="Write Bare-Metal Programs" icon="terminal" href="/guides/bare-metal-programs">
+    Compile ARM code and load it at the emulator's program address, `0x8000`.
+  </Card>
+
+  <Card title="Explore the Demos" icon="gamepad" href="/reference/demo-programs">
+    Try programs that exercise graphics, keyboard input, touch, and audio.
+  </Card>
+</CardGroup>
+
+## Know Which Engine You're Using
+
+| Your input | Execution path | What to expect |
+| --- | --- | --- |
+| ARM hex or a flat `.bin` | ARM / Thumb CPU | Registers, disassembly, RAM, and memory-mapped peripherals |
+| A supported APK | Separate Dalvik HLE interpreter | Stubbed framework calls, log output, and placeholder glyphs |
+| Linux kernel and optional initramfs | ARM CPU with boot setup | Experimental kernel execution, not a guaranteed complete boot |
+
+<Note>
+  NekoDroid is not a full Android OS. Ordinary Play Store apps, multidex, JNI libraries, and Google Play Services are not supported by the APK HLE runner. Check [APK compatibility](/android/supported-apks) before trying your own file.
+</Note>
+
+## Questions Before You Start
+
+<AccordionGroup>
+  <Accordion title="Do I need Android Studio to try the Hello APK?">
+    No. The repository includes `testdata/hello.apk`. Build NekoDroid, select the file through **Load APK**, and click **Run APK (HLE)**. The expected log is `Hello from NekoDroid`.
+  </Accordion>
+
+  <Accordion title="Does APK bytecode run through the ARM CPU?">
+    No. ARM emulation and Dalvik HLE are independent execution paths in the same Rust WebAssembly module. The [architecture guide](/how-it-works) explains how they connect to the browser.
+  </Accordion>
+
+  <Accordion title="What are the display size and memory defaults?">
+    The framebuffer is 800 × 600 RGBA. Calling `init_emulator(0)` selects 512 MB of RAM; callers can choose another size. Large allocations may exceed a browser's available memory.
+  </Accordion>
+</AccordionGroup>
+
+## Find Your Way Around
+
+<CardGroup cols={2}>
+  <Card title="Interface Tour" icon="desktop" href="/guides/web-interface">
+    Learn where to find display modes, uploads, execution controls, and logs.
+  </Card>
+
+  <Card title="Troubleshooting & FAQ" icon="circle-question" href="/faq">
+    Understand limitations and work through common setup questions.
+  </Card>
+</CardGroup>

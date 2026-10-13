@@ -1,0 +1,94 @@
+---
+title: "NekoDroid FAQ and Common Questions"
+description: "Find answers to common questions about NekoDroid, including what it emulates, browser support, APK compatibility, performance, licensing, and contributing."
+sidebarTitle: "FAQ"
+keywords:
+  - "FAQ"
+  - "NekoDroid"
+  - "emulator"
+  - "ARM"
+  - "Android"
+  - "WebAssembly"
+  - "APK"
+  - "license"
+---
+
+NekoDroid is a browser-native ARMv7 emulator written in Rust and compiled to WebAssembly with a Vite + TypeScript UI. This FAQ answers the most common questions about what it does, how it works, and what you can expect when using it.
+
+<AccordionGroup>
+  <Accordion title="What is NekoDroid?">
+    NekoDroid is a browser-native emulator for ARMv7-era CPUs, built in Rust and compiled to WebAssembly using `wasm-bindgen`. It includes a constrained high-level emulation (HLE) Dalvik runner for small APKs, a bare-metal ARM program loader, Linux kernel boot helpers, and a debug UI with canvas rendering. The project is MIT licensed and has 116+ passing unit tests.
+  </Accordion>
+
+  <Accordion title="Can NekoDroid run Play Store apps?">
+    No. NekoDroid is a constrained HLE runner: it parses `classes.dex` and interprets a subset of Dalvik opcodes with stubbed framework methods. It does not boot Android, run ART, or execute native libraries. Most real-world Play Store apps require multidex, JNI, Google Play Services, or Binder features that are outside the current scope. See the <a href="/android/supported-apks">Supported APKs</a> page for what works today.
+  </Accordion>
+
+  <Accordion title="Which browsers are supported?">
+    NekoDroid runs in any modern browser with WebAssembly support: Chrome, Firefox, Safari, and Edge. The build uses Vite 7 with `vite-plugin-wasm` and `vite-plugin-top-level-await`, which are compatible with all evergreen browsers. No plugins or extensions are required.
+  </Accordion>
+
+  <Accordion title="How is performance in the browser?">
+    NekoDroid's Wasm ARM core executes instructions natively inside the browser, and benchmarks from early sessions show gradient rendering at ~46 FPS at 800x600 resolution. Full-screen noise mode runs at ~21 FPS, and plasma effects range from 5 to 15 FPS due to per-pixel trigonometry. APK HLE execution is interpreted and significantly slower than native Android, but it is suitable for small test fixtures and debugging.
+  </Accordion>
+
+  <Accordion title="What is the nesting doll architecture?">
+    NekoDroid's architecture is a stack of emulation layers that flows from the browser down to the guest:
+
+    ```text
+    Browser → Wasm (Rust) → ARM CPU (+ optional DEX HLE) → (future) Android OS → APK
+    ```
+
+    Right now the DEX HLE path runs selected APKs without booting a full Android OS. The long-term goal is richer Android support through goldfish kernel boot and expanded ART coverage.
+  </Accordion>
+
+  <Accordion title="Is NekoDroid a full Android emulator?">
+    No. NekoDroid is intentionally a constrained HLE runner for Milestone 1. It does not emulate zygote, Binder fidelity, SurfaceFlinger, or the full ART JIT. It can run small static-main or onCreate APKs that use only stubbed framework methods. Full Android bring-up is a long-term research goal, not a current feature.
+  </Accordion>
+
+  <Accordion title="What is the license?">
+    NekoDroid is released under the MIT License. You can use, modify, and distribute it freely. See the `LICENSE` file in the repository for the full text.
+  </Accordion>
+
+  <Accordion title="How do I build and run it locally?">
+    You need Rust stable with the `wasm32-unknown-unknown` target, `wasm-pack`, and Node.js. Then run:
+
+    ```bash
+    git clone https://github.com/nishal21/NekoDroid.git
+    cd NekoDroid
+    npm install
+    wasm-pack build --target web
+    npm run dev
+    ```
+
+    Open `http://localhost:5173` in your browser. Tests run with `cargo test --lib`.
+  </Accordion>
+
+  <Accordion title="How does the VRAM text blit work?">
+    When a running APK calls stubbed text-drawing hooks, the HLE runtime records the text. Calling `blit_dalvik_text_to_vram()` copies the accumulated lines into the emulator's 800x600 RGBA framebuffer, so they appear on the canvas. This is a lightweight way to visualize APK output without needing a full Android UI stack.
+  </Accordion>
+
+  <Accordion title="What opcodes does the Dalvik interpreter support?">
+    The interpreter supports a minimal viable product (MVP) set of Dalvik opcodes, including `move`, `const/4`, `const/16`, `const-string`, `return`, `goto`, `if-*`, `invoke-*`, `new-instance`, array operations, and integer arithmetic. The full checklist is in `docs/OPCODE_MVP.md`. Unimplemented opcodes log cleanly and halt the VM.
+  </Accordion>
+
+  <Accordion title="How do I contribute?">
+    Check the <a href="/contributing">Contributing</a> page for setup instructions, safe staging rules, DEVLOG conventions, and references. All changes must pass `cargo test --lib` and `npm run build:wasm` before a PR. Do not stage local-only directories such as `browser-droid/`, `pkg/`, or `test-images/`.
+  </Accordion>
+
+  <Accordion title="Why does a test APK halt with an opcode error?">
+    The interpreter logs the unsupported opcode hex value and program counter, then halts cleanly. This is by design: it makes debugging straightforward. Check the logcat panel for the last line before the halt, then compare the opcode against `docs/OPCODE_MVP.md` to see if it is in the supported set.
+  </Accordion>
+
+  <Accordion title="Can I load custom ARM binaries?">
+    Yes. NekoDroid supports loading raw ARM and Thumb binaries, hex programs, and `.bin` ROM files. You can also paste ARM hex into the Custom Program panel and upload it to RAM at address `0x8000`. See the <a href="/guides/bare-metal-programs">Bare-Metal Programs</a> guide for details.
+  </Accordion>
+
+  <Accordion title="Does NekoDroid boot Linux?">
+    The emulator includes a Linux kernel boot helper (`boot_linux_kernel`) that sets up ATAGs and machine ID for the VersatilePB board, and boots a goldfish kernel with earlyprintk. Full Linux userspace is a work in progress. See the <a href="/guides/boot-linux">Boot Linux</a> guide for current status.
+  </Accordion>
+</AccordionGroup>
+
+## Still have questions?
+
+If your question is not covered here, try checking the <a href="/contributing">Contributing</a> page for development context, or the <a href="/reference/memory-map">Hardware Reference</a> for low-level details about memory layout and peripherals.
