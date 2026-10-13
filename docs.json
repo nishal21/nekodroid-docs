@@ -158,6 +158,6 @@
     "strict": false
   },
   "icons": {
-    "library": "fontawesome"
+    "library": "lucide"
   }
 }
