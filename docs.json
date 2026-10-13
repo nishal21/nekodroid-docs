@@ -12,9 +12,10 @@
     "tabs": [
       {
         "tab": "Guides",
+        "icon": "book-open",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Getting started",
             "pages": [
               "index",
               "quickstart",
@@ -23,7 +24,7 @@
             ]
           },
           {
-            "group": "ARM Emulation",
+            "group": "ARM emulation",
             "pages": [
               "guides/web-interface",
               "guides/cpu-debugger",
@@ -32,7 +33,7 @@
             ]
           },
           {
-            "group": "APK Runtime",
+            "group": "APK runtime",
             "pages": [
               "android/run-apk",
               "android/supported-apks",
@@ -44,24 +45,47 @@
       },
       {
         "tab": "Reference",
-        "pages": [
-          "reference/memory-map",
-          "reference/peripherals",
-          "reference/dalvik-opcodes",
-          "reference/demo-programs"
+        "icon": "library",
+        "groups": [
+          {
+            "group": "Hardware",
+            "pages": [
+              "reference/memory-map",
+              "reference/peripherals"
+            ]
+          },
+          {
+            "group": "Runtime",
+            "pages": [
+              "reference/dalvik-opcodes",
+              "reference/demo-programs"
+            ]
+          }
         ]
       },
       {
         "tab": "API",
-        "pages": [
-          "reference/wasm-api"
+        "icon": "braces",
+        "groups": [
+          {
+            "group": "JavaScript API",
+            "pages": [
+              "reference/wasm-api"
+            ]
+          }
         ]
       },
       {
         "tab": "Contributing",
-        "pages": [
-          "contributing",
-          "development"
+        "icon": "git-pull-request",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "contributing",
+              "development"
+            ]
+          }
         ]
       }
     ]
@@ -73,14 +97,16 @@
   "navbar": {
     "links": [
       {
+        "label": "GitHub",
         "href": "https://github.com/nishal21/NekoDroid",
-        "label": "Source"
-      },
-      {
-        "href": "https://github.com/nishal21/NekoDroid/issues",
-        "label": "Issues"
+        "icon": "github"
       }
-    ]
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get started",
+      "href": "/quickstart"
+    }
   },
   "contextual": {
     "options": [
@@ -89,35 +115,14 @@
     ]
   },
   "footer": {
-    "links": [
-      {
-        "header": "Project",
-        "items": [
-          {
-            "label": "Source",
-            "href": "https://github.com/nishal21/NekoDroid"
-          },
-          {
-            "label": "Issues",
-            "href": "https://github.com/nishal21/NekoDroid/issues"
-          }
-        ]
-      },
-      {
-        "header": "Documentation",
-        "items": [
-          {
-            "label": "Provided by Mintlify",
-            "href": "https://mintlify.com"
-          }
-        ]
-      }
-    ]
+    "socials": {
+      "github": "https://github.com/nishal21/NekoDroid"
+    }
   },
   "description": "Documentation for NekoDroid, a Rust and WebAssembly ARM emulator with a separate, constrained Dalvik HLE runtime for small APK fixtures.",
   "background": {
     "color": {
-      "light": "#fafafa",
+      "light": "#ffffff",
       "dark": "#0c0c0d"
     }
   },
@@ -135,10 +140,19 @@
     "codeblocks": "system"
   },
   "fonts": {
-    "family": "Inter"
+    "body": {
+      "family": "Inter"
+    },
+    "heading": {
+      "family": "Inter",
+      "weight": 600
+    }
   },
   "appearance": {
     "default": "dark",
     "strict": false
+  },
+  "icons": {
+    "library": "lucide"
   }
 }

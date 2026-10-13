@@ -1,37 +1,117 @@
 ---
-title: "NekoDroid: ARM Emulation and Small APKs in a Browser"
+icon: "house"
+title: "NekoDroid"
 sidebarTitle: "Overview"
-description: "Learn to build NekoDroid, run small APK fixtures with Dalvik HLE, debug ARM programs, and control the Rust WebAssembly module from JavaScript."
+mode: "wide"
+description: "Run ARM programs and small Android APKs in your browser. NekoDroid is written in Rust and compiled to WebAssembly."
 ---
 
-Run small Android APKs in your browser.
+<div className="nd-hero">
+  <img src="/logo/favicon.svg" alt="" className="nd-hero-mark" noZoom />
+  <h1 className="nd-hero-title">NekoDroid</h1>
+  <p className="nd-hero-pitch">Run ARM programs and small Android APKs in your browser. Written in Rust, compiled to WebAssembly, no server needed.</p>
+  <div className="nd-hero-actions">
+    <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
+    <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-secondary">View on GitHub</a>
+  </div>
+</div>
 
-NekoDroid runs supported DEX bytecode locally with a constrained Dalvik runtime. It also emulates ARM and Thumb programs. No server executes your programs. The documented setup requires a local build; this is not a full Android environment.
+<div className="nd-section">
 
-## Try the Hello Fixture
-
-Build NekoDroid, select `testdata/hello.apk` with **Load APK**, then click **Run APK (HLE)**. The HLE log should contain:
-
-```text Hello fixture output
-Hello from NekoDroid
-```
-
-<CardGroup cols={2}>
-  <Card title="Get Started" icon="arrow-right" href="/quickstart">
+<CardGroup cols={4}>
+  <Card title="Get started" icon="rocket" href="/quickstart">
     Build the project and run the included demo.
   </Card>
-
-  <Card title="How It Works" icon="diagram-project" href="/how-it-works">
-    Understand the ARM and Dalvik execution paths.
+  <Card title="How it works" icon="workflow" href="/how-it-works">
+    The ARM and Dalvik execution paths, side by side.
   </Card>
-
-  <Card title="JavaScript API" icon="code" href="/reference/wasm-api">
+  <Card title="JavaScript API" icon="braces" href="/reference/wasm-api">
     Initialize the module and control execution.
   </Card>
-
-  <Card title="Contribute" icon="code-branch" href="/contributing">
+  <Card title="Contribute" icon="git-pull-request" href="/contributing">
     Report a problem or prepare a focused change.
   </Card>
 </CardGroup>
 
-Ordinary Play Store apps, multidex, JNI, and Google Play Services are not supported. Read [APK compatibility](/android/supported-apks) before loading your own file.
+## Up and running in four steps
+
+<Steps>
+  <Step title="Install the tools">
+    You need stable Rust with the `wasm32-unknown-unknown` target, wasm-pack, and Node.js `^20.19.0` or `>=22.12.0`.
+
+    ```bash
+    rustup target add wasm32-unknown-unknown
+    ```
+  </Step>
+  <Step title="Clone and install">
+    ```bash
+    git clone https://github.com/nishal21/NekoDroid.git
+    cd NekoDroid
+    npm install
+    ```
+  </Step>
+  <Step title="Build and start">
+    <CodeGroup>
+    ```bash Build Wasm
+    wasm-pack build --target web
+    ```
+    ```bash Dev server
+    npm run dev
+    ```
+    </CodeGroup>
+    Then open [http://localhost:5173](http://localhost:5173).
+  </Step>
+  <Step title="Try it">
+    <Tabs>
+      <Tab title="ARM demo">
+        In the **ARMv7 CPU Debug** panel, click **Load Demo**, then **Step**. After three steps, `R0`, `R1` and `R2` hold `5`, `10` and `15`.
+      </Tab>
+      <Tab title="Hello APK">
+        Click **Load APK**, pick `testdata/hello.apk`, then **Run APK (HLE)**. The log shows:
+
+        ```text
+        Hello from NekoDroid
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Explore by topic
+
+<Columns cols={3}>
+  <Card title="Web interface" icon="monitor" href="/guides/web-interface">
+    Every panel and control in the browser UI.
+  </Card>
+  <Card title="CPU debugger" icon="bug" href="/guides/cpu-debugger">
+    Step, run and inspect ARMv7 registers.
+  </Card>
+  <Card title="Bare-metal programs" icon="cpu" href="/guides/bare-metal-programs">
+    Write C against MMIO and run it.
+  </Card>
+  <Card title="Boot Linux" icon="terminal" href="/guides/boot-linux">
+    Load a zImage and optional initramfs.
+  </Card>
+  <Card title="Run an APK" icon="play" href="/android/run-apk">
+    Load a small APK into the Dalvik runner.
+  </Card>
+  <Card title="Memory map" icon="map" href="/reference/memory-map">
+    Address regions and sizes.
+  </Card>
+</Columns>
+
+## Good to know
+
+<AccordionGroup>
+  <Accordion title="Can it run apps from the Play Store?">
+    No. Ordinary Play Store apps, multidex, JNI and Google Play Services are not supported. The APK runner is a constrained Dalvik interpreter, not a full Android system. See [APK compatibility](/android/supported-apks).
+  </Accordion>
+  <Accordion title="Does my code run on a server?">
+    No. Everything runs locally in your browser through WebAssembly.
+  </Accordion>
+  <Accordion title="Do APKs run on the ARM CPU?">
+    No. The two runtimes are separate. APK bytecode is parsed and run by the Dalvik HLE layer. Read [How it works](/how-it-works).
+  </Accordion>
+</AccordionGroup>
+
+</div>

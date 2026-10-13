@@ -102,3 +102,27 @@ img.nav-logo {
     transition: none !important;
   }
 }
+
+/* ---- v2 polish ---- */
+.card { border-radius: 10px !important; transition: border-color .15s ease, background-color .15s ease !important; }
+.card:hover { border-color: #7c83ff66 !important; background-color: #7c83ff08 !important; }
+.dark .card { background-color: #111113 !important; }
+.dark .card:hover { background-color: #151518 !important; }
+
+html:is([data-current-path="/"], [data-current-path="/index"]) #header { display: none; }
+.nd-hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 3.5rem 1rem 2.5rem; }
+.nd-hero-mark { width: 64px; height: 64px; margin: 0 0 1.25rem !important; border-radius: 0 !important; }
+.nd-hero-title { font-size: clamp(2.25rem, 5vw, 3.5rem) !important; font-weight: 650; letter-spacing: -0.035em; line-height: 1.05; margin: 0 !important; }
+.nd-hero-pitch { max-width: 52ch; margin: 1rem auto 1.75rem !important; font-size: 1.0625rem; color: #6b6b73; }
+.dark .nd-hero-pitch { color: #a1a1aa; }
+.nd-hero-actions { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: center; }
+.nd-btn { display: inline-flex; align-items: center; height: 40px; padding: 0 1.1rem; border-radius: 8px; font-weight: 500; font-size: .9375rem; text-decoration: none !important; border: 1px solid transparent !important; transition: background-color .15s ease, border-color .15s ease; }
+.nd-btn-primary { background: #5b61d6; color: #fff !important; }
+.nd-btn-primary:hover { background: #4f55c4; }
+.nd-btn-secondary { border-color: #18181b26 !important; color: inherit !important; }
+.dark .nd-btn-secondary { border-color: #ffffff26 !important; }
+.nd-btn-secondary:hover { background: #7c83ff10; }
+.nd-section { max-width: 1040px; margin: 0 auto; }
+.nd-section h2 { margin-top: 3.5rem !important; }
+#sidebar a { border-radius: 6px; }
+.card [data-component-part="card-icon"] { color: #7c83ff !important; }
