@@ -3,9 +3,9 @@
   "theme": "maple",
   "name": "NekoDroid",
   "colors": {
-    "primary": "#7c83ff",
-    "light": "#9aa0ff",
-    "dark": "#5b61d6"
+    "primary": "#0f0f10",
+    "light": "#fafafa",
+    "dark": "#0f0f10"
   },
   "favicon": "/logo/favicon.svg",
   "navigation": {

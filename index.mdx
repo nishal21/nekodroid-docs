@@ -2,12 +2,15 @@
 icon: "house"
 title: "NekoDroid"
 sidebarTitle: "Overview"
-mode: "wide"
+mode: "custom"
 description: "Run ARM programs and small Android APKs in your browser. NekoDroid is written in Rust and compiled to WebAssembly."
 ---
 
+import { Intro } from "/snippets/Intro.jsx";
+
+<div className="nd-page">
 <div className="nd-hero">
-  <img src="/logo/favicon.svg" alt="" className="nd-hero-mark" noZoom />
+  <Intro />
   <h1 className="nd-hero-title">NekoDroid</h1>
   <p className="nd-hero-pitch">Run ARM programs and small Android APKs in your browser. Written in Rust, compiled to WebAssembly, no server needed.</p>
   <div className="nd-hero-actions">
@@ -18,7 +21,7 @@ description: "Run ARM programs and small Android APKs in your browser. NekoDroid
 
 <div className="nd-section">
 
-<CardGroup cols={4}>
+<CardGroup cols={2}>
   <Card title="Get started" icon="rocket" href="/quickstart">
     Build the project and run the included demo.
   </Card>
@@ -114,4 +117,5 @@ description: "Run ARM programs and small Android APKs in your browser. NekoDroid
   </Accordion>
 </AccordionGroup>
 
+</div>
 </div>
