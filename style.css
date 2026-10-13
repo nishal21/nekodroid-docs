@@ -19,12 +19,11 @@
   --nd-muted: #8b949e;
   --nd-border: #30363d;
   --nd-surface: #161b22;
-  --nd-surface-muted: #161b22;
+  --nd-surface-muted: #1c2128;
   --nd-link: #f4f4f5;
   --nd-focus: #e6edf3;
 }
 
-/* ---- Reading chrome ---- */
 #content-area .mdx-content {
   max-width: 68ch;
   line-height: 1.7;
@@ -81,9 +80,10 @@ html.nd-intro-active body {
   fill: none !important;
   stroke: currentColor !important;
   opacity: 1 !important;
+  color: var(--nd-fg) !important;
 }
 
-/* ---- Overview (Doctocat layout) ---- */
+/* Overview */
 body:has(.nd-doc) #header,
 body:has(.nd-doc) [data-page-header] {
   display: none !important;
@@ -104,77 +104,25 @@ body:has(.nd-doc) #content-area .mdx-content {
   color: var(--nd-fg);
 }
 
-/* LiquidGlass hero root — mascot + GitHub are .glass direct children */
-.nd-glass-hero {
-  position: relative;
+.nd-doc-hero {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  gap: 0.65rem 0.7rem;
-  margin: 0 0 1.75rem;
-  padding: 0.5rem 0 0.25rem;
-  isolation: isolate;
-}
-
-.nd-scene {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  border-radius: 20px;
-  pointer-events: none;
-}
-
-.nd-scene-glow {
-  position: absolute;
-  inset: -25% -15% auto;
-  height: 80%;
-  background:
-    radial-gradient(ellipse at 35% 45%, rgba(255, 255, 255, 0.2), transparent 55%),
-    radial-gradient(ellipse at 70% 30%, rgba(148, 163, 184, 0.16), transparent 52%);
-}
-
-.dark .nd-scene-glow {
-  background:
-    radial-gradient(ellipse at 35% 45%, rgba(255, 255, 255, 0.09), transparent 55%),
-    radial-gradient(ellipse at 72% 28%, rgba(228, 228, 231, 0.08), transparent 52%);
-}
-
-.nd-mascot-shell {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 104px;
-  height: 104px;
-  margin: 0 auto 0.35rem;
-  border-radius: 999px;
-  border: 1px solid var(--nd-border);
-  overflow: hidden;
+  text-align: center;
+  padding: 0.5rem 0 1.75rem;
 }
 
 .nd-doc-mascot {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
+  margin: 0 0 1rem;
   object-fit: contain;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
-  position: relative;
-  z-index: 1;
-}
-
-.nd-hero-copy {
-  position: relative;
-  z-index: 1;
-  flex: 0 0 100%;
-  text-align: center;
-  margin: 0 0 0.35rem;
+  display: block;
 }
 
 .nd-doc-title {
@@ -188,16 +136,22 @@ body:has(.nd-doc) #content-area .mdx-content {
 }
 
 .nd-doc-lede {
-  margin: 0.75rem auto 0 !important;
+  margin: 0.75rem 0 0 !important;
   max-width: 34rem;
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--nd-muted);
 }
 
+.nd-doc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.35rem;
+}
+
 .nd-doc-btn {
-  position: relative;
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -223,46 +177,15 @@ body:has(.nd-doc) #content-area .mdx-content {
 }
 
 .nd-doc-btn-secondary {
-  background: var(--nd-surface);
+  background: transparent;
   color: var(--nd-fg) !important;
   border-color: var(--nd-border);
-  overflow: hidden;
 }
 
 .nd-doc-btn-secondary:hover {
   background: var(--nd-surface-muted);
 }
 
-/* CSS glass fallback for mascot + GitHub (every browser) */
-.nd-glass-css .nd-mascot-shell,
-.nd-glass-css .nd-doc-btn-secondary.glass,
-.nd-mascot-shell,
-a.nd-doc-btn-secondary.glass {
-  background: color-mix(in srgb, var(--nd-surface) 55%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  backdrop-filter: blur(16px) saturate(1.25);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .nd-glass-css .nd-mascot-shell,
-  .nd-glass-css .nd-doc-btn-secondary.glass,
-  .nd-mascot-shell,
-  a.nd-doc-btn-secondary.glass {
-    background: var(--nd-surface);
-  }
-}
-
-.nd-glass-live .nd-mascot-shell > *,
-.nd-glass-live a.glass.nd-doc-btn-secondary {
-  position: relative;
-  z-index: 1;
-}
-
-.nd-glass-live a.glass.nd-doc-btn-secondary {
-  background: transparent;
-}
-
-/* Cards — plain, no Liquid Glass */
 .nd-doc-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -326,7 +249,8 @@ a.nd-doc-btn-secondary.glass {
   margin-top: 0.35rem;
   font-size: 0.9rem;
   font-weight: 550;
-  color: var(--nd-link) !important;
+  color: var(--nd-fg) !important;
+  opacity: 0.9;
 }
 
 .nd-doc-section {
@@ -350,8 +274,12 @@ a.nd-doc-btn-secondary.glass {
     grid-template-columns: 1fr;
   }
 
+  .nd-doc-actions {
+    width: 100%;
+  }
+
   .nd-doc-btn {
-    width: min(100%, 20rem);
+    width: 100%;
   }
 }
 

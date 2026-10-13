@@ -7,43 +7,31 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
 ---
 
 <div className="nd-doc">
-  {/* Liquid Glass only on mascot shell + GitHub button — not on cards */}
-  <div id="nd-glass-root" className="nd-glass-hero">
-    <div className="nd-scene" aria-hidden="true">
-      <div className="nd-scene-glow" />
+  <div className="nd-doc-hero">
+    <img
+      className="nd-doc-mascot"
+      src="/logo/favicon.svg"
+      alt=""
+      width="72"
+      height="72"
+    />
+
+    <h1 className="nd-doc-title">NekoDroid</h1>
+    <p className="nd-doc-lede">
+      Run ARM programs and small Android APKs in your browser. Made with Rust and WebAssembly.
+    </p>
+
+    <div className="nd-doc-actions">
+      <a href="/quickstart" className="nd-doc-btn nd-doc-btn-primary">
+        Get started <span aria-hidden="true">→</span>
+      </a>
+      <a
+        href="https://github.com/nishal21/NekoDroid"
+        className="nd-doc-btn nd-doc-btn-secondary"
+      >
+        View on GitHub
+      </a>
     </div>
-
-    <div
-      className="glass nd-mascot-shell"
-      data-config='{"bevelMode":1,"cornerRadius":52,"zRadius":52,"blurAmount":0.12,"refraction":1.05,"chromAberration":0.04,"edgeHighlight":0.14,"shadowOpacity":0.22,"brightness":0.02}'
-    >
-      <img
-        className="nd-doc-mascot"
-        src="/logo/favicon.svg"
-        alt=""
-        width="72"
-        height="72"
-      />
-    </div>
-
-    <div className="nd-hero-copy">
-      <h1 className="nd-doc-title">NekoDroid</h1>
-      <p className="nd-doc-lede">
-        Run ARM programs and small Android APKs in your browser. Made with Rust and WebAssembly.
-      </p>
-    </div>
-
-    <a href="/quickstart" className="nd-doc-btn nd-doc-btn-primary">
-      Get started <span aria-hidden="true">→</span>
-    </a>
-
-    <a
-      href="https://github.com/nishal21/NekoDroid"
-      className="glass nd-doc-btn nd-doc-btn-secondary"
-      data-config='{"button":true,"cornerRadius":24,"blurAmount":0.2,"refraction":0.55,"chromAberration":0.03,"edgeHighlight":0.12,"shadowOpacity":0.2,"brightness":-0.02}'
-    >
-      View on GitHub
-    </a>
   </div>
 
   <div className="nd-doc-cards">
