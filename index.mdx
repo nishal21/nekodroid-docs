@@ -7,98 +7,154 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
 ---
 
 <div className="nd-hub">
-  <div className="nd-hub-top">
-    <div className="nd-hub-hero">
-      <p className="nd-kicker">Docs</p>
-      <h1 className="nd-hub-title">NekoDroid</h1>
-
-      <p className="nd-hub-lede">
-        Run ARM programs and small Android APKs in your browser. Rust to WebAssembly, local execution, no cloud runtime.
+  <div className="nd-hero">
+    <div className="nd-hero-copy">
+      <p className="nd-kicker">Browser ARM + Dalvik</p>
+      <h1 className="nd-title">NekoDroid</h1>
+      <p className="nd-lede">
+        Rust to WebAssembly. Run bare-metal ARM demos and small APKs locally — no cloud runtime.
       </p>
-
-      <div className="nd-hub-actions">
+      <div className="nd-actions">
         <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
         <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-ghost">GitHub</a>
+        <a href="/reference/wasm-api" className="nd-btn nd-btn-ghost">Wasm API</a>
       </div>
     </div>
 
-    <div className="nd-hub-aside">
-      <a className="nd-aside-link" href="/quickstart">
-        <span className="nd-aside-label">Start</span>
-        <span className="nd-aside-text">Quickstart</span>
-      </a>
-
-      <a className="nd-aside-link" href="/how-it-works">
-        <span className="nd-aside-label">Architecture</span>
-        <span className="nd-aside-text">How it works</span>
-      </a>
-
-      <a className="nd-aside-link" href="/reference/wasm-api">
-        <span className="nd-aside-label">API</span>
-        <span className="nd-aside-text">Wasm bindings</span>
-      </a>
-
-      <a className="nd-aside-link" href="/android/supported-apks">
-        <span className="nd-aside-label">Limits</span>
-        <span className="nd-aside-text">Supported APKs</span>
-      </a>
+    <div className="nd-hero-panel">
+      <p className="nd-panel-label">Try in four steps</p>
+      <ol className="nd-panel-list">
+        <li>Install Rust + wasm-pack</li>
+        <li>Clone and <code>npm install</code></li>
+        <li><code>wasm-pack build --target web</code></li>
+        <li>Open localhost:5173</li>
+      </ol>
+      <a href="/quickstart" className="nd-panel-link">Full quickstart →</a>
     </div>
   </div>
 
-  <div className="nd-hub-section">
-    <h2 className="nd-hub-section-title">Start here</h2>
+  <section className="nd-section">
+    <div className="nd-section-head">
+      <h2 className="nd-section-title">Start here</h2>
+      <p className="nd-section-desc">Clone, build, and understand the runtime.</p>
+    </div>
 
-    <CardGroup cols={2}>
-      <Card title="Quickstart" icon="rocket" href="/quickstart">
-        Clone, build the Wasm module, and run the included ARM demo.
-      </Card>
+    <div className="nd-grid nd-grid-2">
+      <a className="nd-tile" href="/quickstart">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Quickstart</span>
+          <span className="nd-tile-desc">Clone, build Wasm, run the ARM demo.</span>
+        </span>
+      </a>
 
-      <Card title="Installation" icon="download" href="/installation">
-        Install Rust, wasm-pack, and a supported Node.js version.
-      </Card>
+      <a className="nd-tile" href="/installation">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Installation</span>
+          <span className="nd-tile-desc">Rust, wasm-pack, and Node versions.</span>
+        </span>
+      </a>
 
-      <Card title="How it works" icon="workflow" href="/how-it-works">
-        Separate ARM and Dalvik paths, framebuffer output, and limits.
-      </Card>
+      <a className="nd-tile" href="/how-it-works">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">How it works</span>
+          <span className="nd-tile-desc">ARM and Dalvik paths, framebuffer, limits.</span>
+        </span>
+      </a>
 
-      <Card title="JavaScript API" icon="braces" href="/reference/wasm-api">
-        Initialize the module and drive CPU, VRAM, and APK HLE.
-      </Card>
-    </CardGroup>
-  </div>
+      <a className="nd-tile" href="/reference/wasm-api">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">JavaScript API</span>
+          <span className="nd-tile-desc">Init the module; drive CPU, VRAM, APK HLE.</span>
+        </span>
+      </a>
+    </div>
+  </section>
 
-  <div className="nd-hub-section">
-    <h2 className="nd-hub-section-title">Build with it</h2>
+  <section className="nd-section">
+    <div className="nd-section-head">
+      <h2 className="nd-section-title">Build with it</h2>
+      <p className="nd-section-desc">UI, debugger, bare metal, Linux, APKs, memory.</p>
+    </div>
 
-    <CardGroup cols={3}>
-      <Card title="Web interface" icon="monitor" href="/guides/web-interface">
-        Tour every panel and control in the browser UI.
-      </Card>
+    <div className="nd-grid nd-grid-3">
+      <a className="nd-tile nd-tile-sm" href="/guides/web-interface">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Web interface</span>
+          <span className="nd-tile-desc">Panels, canvas, controls.</span>
+        </span>
+      </a>
 
-      <Card title="CPU debugger" icon="bug" href="/guides/cpu-debugger">
-        Step ARMv7 instructions and inspect registers.
-      </Card>
+      <a className="nd-tile nd-tile-sm" href="/guides/cpu-debugger">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 11.3 3 14.5 3 18"/><path d="M17.47 9c1.93 2.3 3.53 5.5 3.53 9"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">CPU debugger</span>
+          <span className="nd-tile-desc">Step ARMv7, inspect regs.</span>
+        </span>
+      </a>
 
-      <Card title="Bare-metal programs" icon="cpu" href="/guides/bare-metal-programs">
-        Cross-compile C against MMIO and run it locally.
-      </Card>
+      <a className="nd-tile nd-tile-sm" href="/guides/bare-metal-programs">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Bare-metal</span>
+          <span className="nd-tile-desc">C + MMIO, cross-compile.</span>
+        </span>
+      </a>
 
-      <Card title="Boot Linux" icon="terminal" href="/guides/boot-linux">
-        Load a zImage and optional initramfs.
-      </Card>
+      <a className="nd-tile nd-tile-sm" href="/guides/boot-linux">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Boot Linux</span>
+          <span className="nd-tile-desc">zImage + optional initrd.</span>
+        </span>
+      </a>
 
-      <Card title="Run an APK" icon="play" href="/android/run-apk">
-        Load a small APK into the Dalvik HLE runner.
-      </Card>
+      <a className="nd-tile nd-tile-sm" href="/android/run-apk">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Run an APK</span>
+          <span className="nd-tile-desc">Dalvik HLE runner.</span>
+        </span>
+      </a>
 
-      <Card title="Memory map" icon="map" href="/reference/memory-map">
-        Address regions, sizes, and peripheral bases.
-      </Card>
-    </CardGroup>
-  </div>
+      <a className="nd-tile nd-tile-sm" href="/reference/memory-map">
+        <span className="nd-tile-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+        </span>
+        <span className="nd-tile-body">
+          <span className="nd-tile-title">Memory map</span>
+          <span className="nd-tile-desc">Regions, sizes, bases.</span>
+        </span>
+      </a>
+    </div>
+  </section>
 
-  <div className="nd-hub-section nd-hub-steps">
-    <h2 className="nd-hub-section-title">Four steps to a running demo</h2>
+  <section className="nd-section">
+    <div className="nd-section-head">
+      <h2 className="nd-section-title">Four steps to a running demo</h2>
+    </div>
 
     <Steps>
       <Step title="Install the tools">
@@ -147,10 +203,12 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
         </Tabs>
       </Step>
     </Steps>
-  </div>
+  </section>
 
-  <div className="nd-hub-section">
-    <h2 className="nd-hub-section-title">Good to know</h2>
+  <section className="nd-section nd-section-last">
+    <div className="nd-section-head">
+      <h2 className="nd-section-title">Good to know</h2>
+    </div>
 
     <AccordionGroup>
       <Accordion title="Can it run Play Store apps?">
@@ -165,5 +223,5 @@ description: "Run ARM programs and small Android APKs in your browser. Written i
         No. ARM and Dalvik are separate runtimes. Read [How it works](/how-it-works).
       </Accordion>
     </AccordionGroup>
-  </div>
+  </section>
 </div>
