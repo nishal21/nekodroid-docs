@@ -7,7 +7,7 @@
   --nd-border: #d0d7de;
   --nd-surface: #ffffff;
   --nd-surface-muted: #f6f8fa;
-  --nd-link: #0969da;
+  --nd-link: #1f2328;
   --nd-focus: #1f2328;
   --nd-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --nd-radius: 12px;
@@ -20,7 +20,7 @@
   --nd-border: #30363d;
   --nd-surface: #161b22;
   --nd-surface-muted: #161b22;
-  --nd-link: #4493f8;
+  --nd-link: #f4f4f5;
   --nd-focus: #e6edf3;
 }
 
@@ -101,7 +101,7 @@ body:has(.nd-doc) #content-area .mdx-content {
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
-  padding: 1.5rem 0 3rem;
+  padding: 0.35rem 0 2.75rem;
   color: var(--nd-fg);
 }
 
@@ -110,14 +110,19 @@ body:has(.nd-doc) #content-area .mdx-content {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 1.25rem 0 2rem;
+  padding: 0.35rem 0 1.5rem;
 }
 
 .nd-doc-mascot {
-  width: 112px;
-  height: 112px;
-  margin: 0 0 1.15rem;
+  width: 88px;
+  height: 88px;
+  margin: 0 0 1.1rem;
   object-fit: contain;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 .nd-doc-title {
