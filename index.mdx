@@ -3,117 +3,143 @@ icon: "house"
 title: "NekoDroid"
 sidebarTitle: "Overview"
 mode: "custom"
-description: "Run ARM programs and small Android APKs in your browser. NekoDroid is written in Rust and compiled to WebAssembly."
+description: "Run ARM programs and small Android APKs in your browser. Written in Rust, compiled to WebAssembly."
 ---
 
-<div className="nd-page">
-<div className="nd-hero">
-  <img src="/logo/favicon.svg" alt="" className="nd-hero-mark" noZoom />
-  <h1 className="nd-hero-title">NekoDroid</h1>
-  <p className="nd-hero-pitch">Run ARM programs and small Android APKs in your browser. Written in Rust, compiled to WebAssembly, no server needed.</p>
-  <div className="nd-hero-actions">
-    <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
-    <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-secondary">View on GitHub</a>
-  </div>
-</div>
+<div className="nd-hub">
+  <header className="nd-hub-hero">
+    <p className="nd-kicker">Docs</p>
+    <h1 className="nd-hub-title">NekoDroid</h1>
 
-<div className="nd-section">
+    <p className="nd-hub-lede">
+      Run ARM programs and small Android APKs in your browser. Rust to WebAssembly, local execution, no cloud runtime.
+    </p>
 
-<CardGroup cols={2}>
-  <Card title="Get started" icon="rocket" href="/quickstart">
-    Build the project and run the included demo.
-  </Card>
-  <Card title="How it works" icon="workflow" href="/how-it-works">
-    The ARM and Dalvik execution paths, side by side.
-  </Card>
-  <Card title="JavaScript API" icon="braces" href="/reference/wasm-api">
-    Initialize the module and control execution.
-  </Card>
-  <Card title="Contribute" icon="git-pull-request" href="/contributing">
-    Report a problem or prepare a focused change.
-  </Card>
-</CardGroup>
+    <div className="nd-hub-actions">
+      <a href="/quickstart" className="nd-btn nd-btn-primary">Get started</a>
+      <a href="https://github.com/nishal21/NekoDroid" className="nd-btn nd-btn-ghost">GitHub</a>
+    </div>
+  </header>
 
-## Up and running in four steps
+  <section className="nd-hub-section">
+    <h2 className="nd-hub-section-title">Start here</h2>
 
-<Steps>
-  <Step title="Install the tools">
-    You need stable Rust with the `wasm32-unknown-unknown` target, wasm-pack, and Node.js `^20.19.0` or `>=22.12.0`.
+    <CardGroup cols={2}>
+      <Card title="Quickstart" icon="rocket" href="/quickstart">
+        Clone, build the Wasm module, and run the included ARM demo.
+      </Card>
 
-    ```bash
-    rustup target add wasm32-unknown-unknown
-    ```
-  </Step>
-  <Step title="Clone and install">
-    ```bash
-    git clone https://github.com/nishal21/NekoDroid.git
-    cd NekoDroid
-    npm install
-    ```
-  </Step>
-  <Step title="Build and start">
-    <CodeGroup>
-    ```bash Build Wasm
-    wasm-pack build --target web
-    ```
-    ```bash Dev server
-    npm run dev
-    ```
-    </CodeGroup>
-    Then open [http://localhost:5173](http://localhost:5173).
-  </Step>
-  <Step title="Try it">
-    <Tabs>
-      <Tab title="ARM demo">
-        In the **ARMv7 CPU Debug** panel, click **Load Demo**, then **Step**. After three steps, `R0`, `R1` and `R2` hold `5`, `10` and `15`.
-      </Tab>
-      <Tab title="Hello APK">
-        Click **Load APK**, pick `testdata/hello.apk`, then **Run APK (HLE)**. The log shows:
+      <Card title="Installation" icon="download" href="/installation">
+        Install Rust, wasm-pack, and a supported Node.js version.
+      </Card>
 
-        ```text
-        Hello from NekoDroid
+      <Card title="How it works" icon="workflow" href="/how-it-works">
+        Separate ARM and Dalvik paths, framebuffer output, and limits.
+      </Card>
+
+      <Card title="JavaScript API" icon="braces" href="/reference/wasm-api">
+        Initialize the module and drive CPU, VRAM, and APK HLE.
+      </Card>
+    </CardGroup>
+  </section>
+
+  <section className="nd-hub-section">
+    <h2 className="nd-hub-section-title">Build with it</h2>
+
+    <CardGroup cols={3}>
+      <Card title="Web interface" icon="monitor" href="/guides/web-interface">
+        Tour every panel and control in the browser UI.
+      </Card>
+
+      <Card title="CPU debugger" icon="bug" href="/guides/cpu-debugger">
+        Step ARMv7 instructions and inspect registers.
+      </Card>
+
+      <Card title="Bare-metal programs" icon="cpu" href="/guides/bare-metal-programs">
+        Cross-compile C against MMIO and run it locally.
+      </Card>
+
+      <Card title="Boot Linux" icon="terminal" href="/guides/boot-linux">
+        Load a zImage and optional initramfs.
+      </Card>
+
+      <Card title="Run an APK" icon="play" href="/android/run-apk">
+        Load a small APK into the Dalvik HLE runner.
+      </Card>
+
+      <Card title="Memory map" icon="map" href="/reference/memory-map">
+        Address regions, sizes, and peripheral bases.
+      </Card>
+    </CardGroup>
+  </section>
+
+  <section className="nd-hub-section nd-hub-steps">
+    <h2 className="nd-hub-section-title">Four steps to a running demo</h2>
+
+    <Steps>
+      <Step title="Install the tools">
+        Stable Rust with `wasm32-unknown-unknown`, wasm-pack, and Node.js `^20.19.0` or `>=22.12.0`.
+
+        ```bash
+        rustup target add wasm32-unknown-unknown
         ```
-      </Tab>
-    </Tabs>
-  </Step>
-</Steps>
+      </Step>
 
-## Explore by topic
+      <Step title="Clone and install">
+        ```bash
+        git clone https://github.com/nishal21/NekoDroid.git
+        cd NekoDroid
+        npm install
+        ```
+      </Step>
 
-<Columns cols={3}>
-  <Card title="Web interface" icon="monitor" href="/guides/web-interface">
-    Every panel and control in the browser UI.
-  </Card>
-  <Card title="CPU debugger" icon="bug" href="/guides/cpu-debugger">
-    Step, run and inspect ARMv7 registers.
-  </Card>
-  <Card title="Bare-metal programs" icon="cpu" href="/guides/bare-metal-programs">
-    Write C against MMIO and run it.
-  </Card>
-  <Card title="Boot Linux" icon="terminal" href="/guides/boot-linux">
-    Load a zImage and optional initramfs.
-  </Card>
-  <Card title="Run an APK" icon="play" href="/android/run-apk">
-    Load a small APK into the Dalvik runner.
-  </Card>
-  <Card title="Memory map" icon="map" href="/reference/memory-map">
-    Address regions and sizes.
-  </Card>
-</Columns>
+      <Step title="Build and start">
+        <CodeGroup>
+          ```bash Build Wasm
+          wasm-pack build --target web
+          ```
 
-## Good to know
+          ```bash Dev server
+          npm run dev
+          ```
+        </CodeGroup>
 
-<AccordionGroup>
-  <Accordion title="Can it run apps from the Play Store?">
-    No. Ordinary Play Store apps, multidex, JNI and Google Play Services are not supported. The APK runner is a constrained Dalvik interpreter, not a full Android system. See [APK compatibility](/android/supported-apks).
-  </Accordion>
-  <Accordion title="Does my code run on a server?">
-    No. Everything runs locally in your browser through WebAssembly.
-  </Accordion>
-  <Accordion title="Do APKs run on the ARM CPU?">
-    No. The two runtimes are separate. APK bytecode is parsed and run by the Dalvik HLE layer. Read [How it works](/how-it-works).
-  </Accordion>
-</AccordionGroup>
+        Open [http://localhost:5173](http://localhost:5173).
+      </Step>
 
-</div>
+      <Step title="Try it">
+        <Tabs>
+          <Tab title="ARM demo">
+            In **ARMv7 CPU Debug**, click **Load Demo**, then **Step**. After three steps, `R0`, `R1`, and `R2` hold `5`, `10`, and `15`.
+          </Tab>
+
+          <Tab title="Hello APK">
+            Click **Load APK**, pick `testdata/hello.apk`, then **Run APK (HLE)**. The log shows:
+
+            ```text
+            Hello from NekoDroid
+            ```
+          </Tab>
+        </Tabs>
+      </Step>
+    </Steps>
+  </section>
+
+  <section className="nd-hub-section">
+    <h2 className="nd-hub-section-title">Good to know</h2>
+
+    <AccordionGroup>
+      <Accordion title="Can it run Play Store apps?">
+        No. Multidex, JNI, and Google Play Services are out of scope. The APK runner is a constrained Dalvik interpreter. See [Supported APKs](/android/supported-apks).
+      </Accordion>
+
+      <Accordion title="Does execution leave the browser?">
+        No. Everything runs locally through WebAssembly.
+      </Accordion>
+
+      <Accordion title="Do APKs run on the ARM CPU?">
+        No. ARM and Dalvik are separate runtimes. Read [How it works](/how-it-works).
+      </Accordion>
+    </AccordionGroup>
+  </section>
 </div>
