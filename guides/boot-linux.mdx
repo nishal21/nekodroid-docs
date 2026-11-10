@@ -2,7 +2,7 @@
 icon: "terminal"
 title: "Boot Linux"
 sidebarTitle: "Boot Linux"
-description: "Upload a zImage and initrd to NekoDroid, configure ATAG boot parameters, and run the ARM goldfish kernel. Learn the current boot status, limitations, and optional smoke tests."
+description: "Upload a zImage and initrd to NekoDroid, boot the ARM kernel through the ATAG path, and review early boot milestones, smoke tests, and known limits."
 ---
 
 NekoDroid can boot a real compressed Linux zImage through an ATAG-compliant boot path. You upload a kernel and optional initramfs from the browser, the emulator sets up the machine tags, and then the ARM CPU begins executing kernel decompression code. This page walks through the upload process, explains what happens under the hood, and describes the current limitations.
