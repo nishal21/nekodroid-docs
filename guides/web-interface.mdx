@@ -7,7 +7,7 @@ description: "Tour the NekoDroid browser UI: the canvas, render modes, metrics p
 
 This page covers every panel and control in the NekoDroid browser UI so you know how to interact with the emulator and running programs.
 
-## Status Bar
+## Status bar
 
 At the top of the page, a colored indicator shows the Wasm module state.
 
@@ -21,7 +21,7 @@ At the top of the page, a colored indicator shows the Wasm module state.
 
 The 800x600 pixel canvas is the main display. What it draws depends on the active render mode. Clicking or touching the canvas translates browser coordinates into framebuffer coordinates and forwards the event to the emulator. Audio also initializes on the first click because the Web Audio API requires a user gesture.
 
-### Render Modes
+### Render modes
 
 Switch views with the buttons under the canvas:
 
@@ -35,7 +35,7 @@ Switch views with the buttons under the canvas:
 
 When you load a bare-metal binary with **Select & Load .bin**, the UI automatically switches to VRAM mode.
 
-## Metrics Panel
+## Metrics panel
 
 Four live counters sit above the console:
 
@@ -46,30 +46,30 @@ Four live counters sit above the console:
 | **CPU Cycles** | Total ARM instructions retired |
 | **Mode** | Currently active render mode label |
 
-## Console Log
+## Console log
 
 A scrolling terminal below the metrics shows timestamped events from both the TypeScript frontend and the Rust backend. Types are color-coded: green for successes, blue for information, amber for warnings. The log keeps the last 100 lines.
 
-## Debug Panel
+## Debug panel
 
 The **ARMv7 CPU Debug** panel on the right contains execution controls and uploaders.
 
-### Demo Buttons
+### Demo buttons
 
 - **Load Demo**: Loads 10 ARM instructions at `0x8000` that compute `R2 = R0 + R1`
 - **Hello UART**: Loads a hand-assembled program that prints "Hello World!" to the virtual UART
 
-### Execution Controls
+### Execution controls
 
 - **Step**: Execute one instruction and update the register grid
 - **Run 10**: Execute up to 10 instructions
 - **Run / Stop**: Toggle continuous execution
 
-### Register Grid
+### Register grid
 
 Live view of `R0` through `R15` (with `SP`, `LR`, and `PC` labeled). Values are shown as 8-digit uppercase hex. Changed values flash briefly so you do not miss updates during bursts.
 
-### Flags Row
+### Flags row
 
 Shows `N`, `Z`, `C`, `V` condition flags and an **ARM / THUMB** mode pill. A bright pill means the flag is set.
 
@@ -84,7 +84,7 @@ Next five instructions from the current `PC`, with the first one highlighted.
 - **Linux zImage + initrd**: Upload a kernel and ramdisk for Linux boot
 - **Load APK**: Select an APK for the HLE Dalvik runtime
 
-## Input Mapping
+## Input mapping
 
 NekoDroid forwards browser input to MMIO registers so ARM programs can read keys and touch.
 
@@ -105,7 +105,7 @@ The frontend listens on `document` so you do not need to focus any element. Arro
 
 Key events are deferred by one frame to guarantee the ARM CPU sees each key for at least one full batch.
 
-### Touch / Mouse
+### Touch and mouse
 
 Events on the canvas are translated to framebuffer coordinates using `getBoundingClientRect()`.
 
@@ -134,11 +134,11 @@ Programs can drive the Web Audio oscillator through two registers:
 
 Audio initializes on the first canvas click. Programs should be ready for the API to start suspended.
 
-## Upload Limits
+## Upload limits
 
 APK uploads have a 32 MiB soft cap, enforced by both the file picker and the Rust APK loader. Kernel images, initramfs files, and bare-metal binaries use separate loading paths. This cap does not apply to them.
 
-## Next Steps
+## Next steps
 
 - [CPU Debugger](/guides/cpu-debugger): Single-step instructions and inspect registers
 - [Bare-Metal Programs](/guides/bare-metal-programs): Write C and cross-compile for ARM
