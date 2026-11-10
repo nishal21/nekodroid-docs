@@ -2,7 +2,7 @@
 icon: "cpu"
 title: "Bare-Metal Programs"
 sidebarTitle: "Bare-Metal Programs"
-description: "Cross-compile C programs for NekoDroid using arm-none-eabi-gcc, start.S, and link.ld. Draw to VRAM, print to UART, and handle keyboard input in a browser-native ARM emulator."
+description: "Cross-compile C for NekoDroid with arm-none-eabi-gcc, start.S, and link.ld, then draw to VRAM, print to UART, and read keyboard and touch input."
 ---
 
 NekoDroid runs real ARM machine code compiled with a standard bare-metal toolchain. You write C against memory-mapped I/O (MMIO) registers, link with a small assembly stub, and load the resulting `.bin` file directly into the emulator. This page shows the full workflow using programs from the repository.

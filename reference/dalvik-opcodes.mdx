@@ -2,7 +2,7 @@
 icon: "binary"
 title: "Dalvik Opcodes"
 sidebarTitle: "Dalvik Opcodes"
-description: "Reference of implemented Dalvik bytecode opcodes in NekoDroid's APK HLE interpreter. Exact hex values, behavior notes, and halt semantics verified from src/android/opcodes.rs and src/android/interp.rs."
+description: "Every Dalvik opcode NekoDroid's APK HLE interpreter implements, with hex values and behavior notes, plus how HLE stubs and unimplemented opcodes behave."
 ---
 
 NekoDroid's APK HLE layer parses `classes.dex` and interprets Dalvik bytecode with stubbed framework calls. It does not boot Android. This page lists every opcode the interpreter implements. Opcodes outside this set halt the VM.
