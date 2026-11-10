@@ -7,9 +7,9 @@ description: "Single-step ARM instructions, inspect registers and flags, view li
 
 This page covers every control in the NekoDroid ARMv7 CPU debug panel and explains how to use it.
 
-## Load a Program
+## Load a program
 
-### Load Demo
+### Load demo
 
 Click **Load Demo** in the **ARMv7 CPU Debug** panel. The emulator writes a 10-instruction program to RAM at `0x8000`, sets `PC = 0x8000`, and resets the cycle count. The disassembly panel updates immediately.
 
@@ -30,7 +30,7 @@ The demo program executes the following:
 
 ### Hello UART
 
-Click **Hello UART** to load a hand-assembled program that prints "Hello World!" to the virtual serial port. After loading, press **Step** or **Run** to execute. The console shows the output when the newline byte flushes the buffer.
+Click **Hello UART** to load a hand-assembled program that prints "Hello World!" to the virtual serial port. After loading, click **Step** or **Run** to execute. The console shows the output when the newline byte flushes the buffer.
 
 The program uses these instructions:
 
@@ -46,7 +46,7 @@ The program uses these instructions:
 | `0x801C` | `B .` | Infinite loop (halt) |
 | `0x8020` | `"Hello World!\n\0"` | ASCII payload |
 
-## Step Through Instructions
+## Step through instructions
 
 - **Step** executes exactly one instruction and pauses
 - **Run 10** executes up to 10 instructions or until the CPU halts
@@ -54,7 +54,7 @@ The program uses these instructions:
 
 The debug panel updates live during continuous execution.
 
-## Read the Register Grid
+## Read the register grid
 
 Sixteen cells display `R0` through `R15`. Values are shown as 8-digit uppercase hex. Changed registers flash briefly. The aliases are:
 
@@ -62,7 +62,7 @@ Sixteen cells display `R0` through `R15`. Values are shown as 8-digit uppercase 
 - `R14` = `LR`
 - `R15` = `PC`
 
-## Read the Flags Row
+## Read the flags row
 
 Five pills sit above the disassembly panel:
 
@@ -74,15 +74,15 @@ Five pills sit above the disassembly panel:
 | V | Overflow | Signed overflow |
 | ARM / THUMB | Current instruction set | `T` bit in CPSR |
 
-## Read the Disassembly Panel
+## Read the disassembly panel
 
 The disassembler shows the next five instructions starting at `PC`. The first line is highlighted as the current instruction. If an instruction is not recognized, the line shows the raw 32-bit encoding.
 
-## Upload Custom Hex Programs
+## Upload custom hex programs
 
 The **CUSTOM PROGRAM** textarea accepts space-separated ARM machine code hex words. Click **Upload to RAM** to write them at `0x8000` and reset `PC`.
 
-### Placeholder Program
+### Placeholder program
 
 The default placeholder text is `e3a00005 e3a0100a e0802001`. Here is the breakdown:
 
@@ -96,7 +96,7 @@ After uploading and stepping three times, `R0 = 5`, `R1 = 10`, and `R2 = 15`.
 
 All tokens must be exactly 8 hex characters. The parser accepts spaces and newlines.
 
-## Boot State
+## Boot state
 
 When the emulator initializes, the CPU boots with:
 
@@ -110,7 +110,7 @@ Calling `init_emulator(0)` selects the 512 MB default. The maximum is 4096 MB. S
 
 If you upload a `.bin` file, the ROM loader copies the binary to `0x8000` and sets `PC` there.
 
-## Next Steps
+## Next steps
 
 - [Bare-Metal Programs](/guides/bare-metal-programs): Move from hand-assembled hex to C with a linker script
 - [Web Interface](/guides/web-interface): Explore render modes and input mapping

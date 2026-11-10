@@ -39,7 +39,7 @@ NekoDroid can boot a real compressed Linux zImage through an ATAG-compliant boot
 
 ## What happens during boot
 
-When you press **BOOT LINUX**, the emulator performs the following setup based on the `boot_linux` Rust method:
+When you click **BOOT LINUX**, the emulator performs the following setup based on the `boot_linux` Rust method:
 
 1. **Machine ID**: Writes `0x046F` (MACH_TYPE_GOLDFISH) into register `R1`
 2. **ATAGS**: Builds an ATAG list at address `0x100` containing:
@@ -50,7 +50,7 @@ When you press **BOOT LINUX**, the emulator performs the following setup based o
 3. **CPU state**: Sets `R0 = 0`, `R1 = machine_id`, `R2 = 0x100` (ATAG pointer), and `PC = 0x10000` (the zImage load address)
 4. **MMU**: The emulator creates a soft identity mapping so the kernel can enable the MMU without crashing on out-of-range page-table bases
 
-After setup, you must press **Run** to start execution. The CPU decompresses the kernel (you may see `Uncompressing Linux...` in the console from earlyprintk) and eventually jumps to the decompressed kernel entry.
+After setup, you must click **Run** to start execution. The CPU decompresses the kernel (you may see `Uncompressing Linux...` in the console from earlyprintk) and eventually jumps to the decompressed kernel entry.
 
 ### Early boot milestones you might see
 

@@ -32,7 +32,7 @@ node --version
 npm --version
 ```
 
-## Build and Run
+## Build and run
 
 <Steps>
   <Step title="Get the source">
@@ -58,7 +58,7 @@ npm --version
   </Step>
 </Steps>
 
-## Production Build
+## Production build
 
 ```bash Build and preview
 npm run build
@@ -67,7 +67,7 @@ npm run preview
 
 `npm run build` builds Wasm, checks TypeScript, and bundles the interface into `dist/`. `npm run preview` serves that output locally.
 
-## Common Problems
+## Common problems
 
 **Vite reports an unsupported Node version:** use Node.js that satisfies `^20.19.0 || >=22.12.0`. A dependency accepting Node 18 does not mean the whole project supports it.
 
@@ -75,7 +75,7 @@ npm run preview
 
 **An allocation fails:** `init_emulator(0)` requests 512 MiB of RAM. Browser memory limits can prevent large allocations. Use a smaller nonzero argument through the [JavaScript API](/reference/wasm-api).
 
-## Next Steps
+## Next steps
 
 - [Quickstart](/quickstart): step through the built-in ARM demo.
 - [Development checks](/development): run tests and build checks before submitting changes.
